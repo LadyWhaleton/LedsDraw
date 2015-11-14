@@ -45,39 +45,20 @@ int Task_DisplayImage(int state) {
 	return state;
 }
 
-// shift rows ~(0x01 << 1)
-
-void initTasks()
+int Task_GetInput(int state)
 {
-	tasksNum = 2;
-	task taskList[tasksNum];
-	tasks = taskList;
-
-
-	// define tasks
-	unsigned char i=0; // task number
-
-	// Task that will displays image on the LED matrix
-	tasks[i].state = -1;
-	tasks[i].period = 150;
-	tasks[i].elapsedTime = tasks[i].period;
-	tasks[i].TickFct = &Task_DisplayImage;
-	++i;
+	char key = GetKeypadKey();
+		
+	if (key != '\0')
+	{
+		LCD_Cursor(1);
+		LCD_WriteData(key);
+	}
 	
-	/*
-	// Task that will obtain input from the keypad
-	tasks[i].state = -1;
-	tasks[i].period = 100;
-	tasks[i].elapsedTime = tasks[i].period;
-	tasks[i].TickFct = &Task_GetInput;
-	++i;
-	*/
-
-
-	TimerSet(50); // value set should be GCD of all tasks
-	TimerOn();
-
+	return state;
 }
+
+// shift rows ~(0x01 << 1)
 
 int main(void)
 {
@@ -87,6 +68,34 @@ int main(void)
 	DDRD = 0xF0; PORTD = 0x0F;; // initialize input ports for keypad
 	
 	LCD_init();
+
+	tasksNum = 1;
+	task taskList[tasksNum];
+	tasks = taskList;
+
+	
+	// define tasks
+	unsigned char i=0; // task number
+
+	/*
+	// Task that will displays image on the LED matrix
+	tasks[i].state = -1;
+	tasks[i].period = 150;
+	tasks[i].elapsedTime = tasks[i].period;
+	tasks[i].TickFct = &Task_DisplayImage;
+	++i;
+	*/
+	
+	// Task that will obtain input from the keypad
+	tasks[i].state = -1;
+	tasks[i].period = 100;
+	tasks[i].elapsedTime = tasks[i].period;
+	tasks[i].TickFct = &Task_GetInput;
+	++i;
+
+
+	TimerSet(50); // value set should be GCD of all tasks
+	TimerOn();
 	
     /* Replace with your application code */
     while (1) 
