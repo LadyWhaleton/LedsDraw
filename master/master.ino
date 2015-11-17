@@ -1,5 +1,6 @@
 #include "Agenda.h"
 #include "lcd.h"
+#include "keypad.h"
 #include <avr/io.h>
 
 // ================ GLOBALS ========================
@@ -15,8 +16,14 @@ void Task_DrawImage()
   LCD_Cursor(1);
   LCD_WriteData('H'); LCD_WriteData('e'); LCD_WriteData(44'l'); LCD_WriteData('l'); LCD_WriteData('o');
   */
-
+  /*
   LCD_DisplayString(1, "12Hello!"); // some reason first two characters of any string gets truncated
+  */
+
+  char key = GetKeypadKey();
+
+  if (key != '\0')
+    LCD_WriteData(key);
 }
 
 void Task_Blink()
