@@ -34,7 +34,7 @@ void setup() {
   DDRD = 0xF0; PORTD = 0x0F;; // initialize input ports for keypad
    */
 
-   LCD_init();
+   LCD_init(); // LCD data lines on PORTA
    
   
   Serial.begin(115200);

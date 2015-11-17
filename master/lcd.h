@@ -93,8 +93,8 @@ void LCD_DisplayString( unsigned char column, const char* s) {
 	while (*s)
 	{
 		Serial.print(*s);
-		LCD_Cursor(c++);
 		LCD_WriteData(*s++);
+		LCD_Cursor(c++);
 		
 	}
 }
