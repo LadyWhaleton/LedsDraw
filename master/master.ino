@@ -13,10 +13,10 @@ void Task_DrawImage()
   Serial.println("Draw Image!");
   /*
   LCD_Cursor(1);
-  LCD_WriteData('H'); LCD_WriteData('e'); LCD_WriteData('l'); LCD_WriteData('l'); LCD_WriteData('o');
+  LCD_WriteData('H'); LCD_WriteData('e'); LCD_WriteData(44'l'); LCD_WriteData('l'); LCD_WriteData('o');
   */
 
-  LCD_DisplayString(2, "12Hello!"); // some reason first two characters of any string gets truncated
+  LCD_DisplayString(1, "12Hello!"); // some reason first two characters of any string gets truncated
 }
 
 void Task_Blink()
