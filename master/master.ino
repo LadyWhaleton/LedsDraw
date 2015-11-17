@@ -1,4 +1,5 @@
 #include "Agenda.h"
+#include <avr/io.h>
 
 // ================ GLOBALS ========================
 const unsigned long ONE_SEC = 1000000;
@@ -9,6 +10,7 @@ int task1, task2;
 void Task_DrawImage()
 {
   Serial.println("Draw Image!");
+  PORTA = 3;
 }
 
 void Task_Blink()
@@ -25,6 +27,9 @@ void setup() {
     
   DDRD = 0xF0; PORTD = 0x0F;; // initialize input ports for keypad
    */
+
+   DDRA = 0xFF;
+   
   
   Serial.begin(115200);
   task1 = scheduler.insert(Task_DrawImage, ONE_SEC/2, false);
