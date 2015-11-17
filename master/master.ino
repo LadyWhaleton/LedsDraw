@@ -1,4 +1,5 @@
 #include "Agenda.h"
+#include "lcd.h"
 #include <avr/io.h>
 
 // ================ GLOBALS ========================
@@ -10,7 +11,12 @@ int task1, task2;
 void Task_DrawImage()
 {
   Serial.println("Draw Image!");
-  PORTA = 3;
+  /*
+  LCD_Cursor(1);
+  LCD_WriteData('H'); LCD_WriteData('e'); LCD_WriteData('l'); LCD_WriteData('l'); LCD_WriteData('o');
+  */
+
+  LCD_DisplayString(2, "12Hello!"); // some reason first two characters of any string gets truncated
 }
 
 void Task_Blink()
@@ -28,7 +34,7 @@ void setup() {
   DDRD = 0xF0; PORTD = 0x0F;; // initialize input ports for keypad
    */
 
-   DDRA = 0xFF;
+   LCD_init();
    
   
   Serial.begin(115200);
