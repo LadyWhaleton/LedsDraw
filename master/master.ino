@@ -11,7 +11,7 @@ int task1, task2;
 
 void Task_DrawImage()
 {
-  Serial.println("Draw Image!");
+  //Serial.println("Draw Image!");
   /*
   LCD_Cursor(1);
   LCD_WriteData('H'); LCD_WriteData('e'); LCD_WriteData(44'l'); LCD_WriteData('l'); LCD_WriteData('o');
@@ -28,7 +28,7 @@ void Task_DrawImage()
 
 void Task_Blink()
 {
-  Serial.println("Blink!");
+  //Serial.println("Blink!");
 }
 
 void setup() {
@@ -41,11 +41,11 @@ void setup() {
   DDRD = 0xF0; PORTD = 0x0F;; // initialize input ports for keypad
    */
 
-   LCD_init(); // LCD data lines on PORTA
-   
+   LCD_init(); // LCD data lines on PORTL
+   Keypad_init(); // Keypad on PortA
   
   Serial.begin(115200);
-  task1 = scheduler.insert(Task_DrawImage, ONE_SEC/2, false);
+  task1 = scheduler.insert(Task_DrawImage, ONE_SEC/5, false);
   scheduler.activate(task1);
 
   task2 = scheduler.insert(Task_Blink, ONE_SEC, false);
