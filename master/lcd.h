@@ -17,8 +17,16 @@
 #define DATA_BUS PORTB		// port connected to pins 7-14 of LCD display
 #define CONTROL_BUS_RS 2	// port connected to pins 4 and 6 of LCD disp.
 #define CONTROL_BUS_E 3
-#define RS 0				// pin number of uC connected to pin 4 of LCD disp.
-#define E 0					// pin number of uC connected to pin 6 of LCD disp.
+
+#define BIT0 12
+#define BIT1 11
+#define BIT2 10
+#define BIT3 9
+#define BIT4 8
+#define BIT5 7
+#define BIT6 6
+#define BIT7 5
+
 
 /*-------------------------------------------------------------------------*/
 
@@ -33,10 +41,30 @@ void delay_ms(int miliSec) { //for 8 Mhz crystal
 
 /*-------------------------------------------------------------------------*/
 
+// Added this function
+void writeToDataBus(unsigned char data)
+{
+  unsigned char currBit = 0;
+  int pinNum = BIT0;
+
+  for (int i = 0; i < 8; ++i)
+  {
+    currBit = GET_BIT(data, i);
+
+    if (currBit > 0)
+      digitalWrite(pinNum, HIGH);
+    else
+      digitalWrite(pinNum, LOW);
+
+     pinNum--;
+  }
+}
+
 void LCD_WriteCommand (unsigned char Command) {
 	// CLR_BIT(CONTROL_BUS,RS);
 	digitalWrite(CONTROL_BUS_RS, LOW);
-	DATA_BUS = Command;
+	//DATA_BUS = Command;
+  writeToDataBus(Command);
 	// SET_BIT(CONTROL_BUS,E);
 	digitalWrite(CONTROL_BUS_E, HIGH);
 	asm("nop");
@@ -55,7 +83,15 @@ void LCD_init(void) {
   pinMode(CONTROL_BUS_RS, OUTPUT);
   pinMode(CONTROL_BUS_E, OUTPUT);
 
-  DDRB = 0xFF; DATA_BUS = 0x00;
+  // DDRB = 0xFF; DATA_BUS = 0x00;
+  pinMode(BIT0, OUTPUT);
+  pinMode(BIT1, OUTPUT);
+  pinMode(BIT2, OUTPUT);
+  pinMode(BIT3, OUTPUT);
+  pinMode(BIT4, OUTPUT);
+  pinMode(BIT5, OUTPUT);
+  pinMode(BIT6, OUTPUT);
+  pinMode(BIT7, OUTPUT);
   
 	delay_ms(100); //wait for 100 ms for LCD to power up
 
@@ -69,7 +105,8 @@ void LCD_init(void) {
 void LCD_WriteData(char Data) {
 	// SET_BIT(CONTROL_BUS,RS);
 	digitalWrite(CONTROL_BUS_RS, HIGH);
-	DATA_BUS = Data;
+	// DATA_BUS = Data;
+  writeToDataBus(Data);
 	// SET_BIT(CONTROL_BUS,E);
 	digitalWrite(CONTROL_BUS_E, HIGH);
 	asm("nop");
