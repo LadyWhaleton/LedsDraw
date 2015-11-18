@@ -1,31 +1,74 @@
 #include "Agenda.h"
-#include "lcd.h"
 #include "keypad.h"
+#include "lcd_messages.h"
 #include <avr/io.h>
 
 // ================ GLOBALS ========================
-const unsigned long ONE_SEC = 1000000;
+#define ONE_SEC 1000000
+#define MIN_OPTION 1
+#define MAX_OPTION 4
 
 Agenda scheduler;
 int task1, task2;
 
-void Task_DrawImage()
+enum T1_SM {MainInit, MainMenu, DrawMode, SyncMode, Reset} mainState;
+void Task_Main()
 {
-  //Serial.println("Draw Image!");
-  /*
-  LCD_Cursor(1);
-  LCD_WriteData('H'); LCD_WriteData('e'); LCD_WriteData(44'l'); LCD_WriteData('l'); LCD_WriteData('o');
-  */
-  /*
-  LCD_DisplayString(1, "12Hello!"); // some reason first two characters of any string gets truncated
-  */
-
+  static int menuOption;
   char key = GetKeypadKey();
 
-  if (key !=  '\0')
+  switch (mainState)
   {
-    LCD_Cursor(18);
-    LCD_WriteData(key);
+    case MainInit:
+      menuOption = 1;
+      displayDefaultMenu();
+      mainState = MainMenu;
+      break;
+      
+    case MainMenu:
+      if (menuOption != MIN_OPTION && key =='4') // menu left
+      {
+        menuOption--;
+        displayMenuOption(menuOption);
+      }
+      else if (menuOption != MAX_OPTION && key == '6') // menu right
+      {
+        menuOption++;
+        displayMenuOption(menuOption);
+      }
+      else if (key == '5') // user selected something
+      {
+        if (menuOption == 1)
+        {
+          displayDrawMode();
+          mainState = DrawMode;
+        }
+        else if (menuOption == 2)
+        {
+          displaySyncMode();
+          mainState = SyncMode;
+        }
+      }
+      break;
+
+    case DrawMode:
+      if (key == 'B')
+      {
+        displayDefaultMenu();
+        mainState = MainMenu;
+      }
+      break;
+
+    case SyncMode:
+      if (key == 'B')
+      {
+        displayDefaultMenu();
+        mainState = MainMenu;
+      }
+      break;
+      
+    default:
+      mainState = MainInit;
   }
 
 }
@@ -42,7 +85,7 @@ void setup() {
    Keypad_init(); // Keypad on PortA
   
   Serial.begin(115200);
-  task1 = scheduler.insert(Task_DrawImage, ONE_SEC/8, false);
+  task1 = scheduler.insert(Task_Main, ONE_SEC/8, false);
   scheduler.activate(task1);
 
   task2 = scheduler.insert(Task_Blink, ONE_SEC, false);

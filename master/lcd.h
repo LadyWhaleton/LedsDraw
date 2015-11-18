@@ -74,8 +74,50 @@ void LCD_WriteCommand (unsigned char Command) {
 	delay_ms(2); // ClearScreen requires 1.52ms to execute
 }
 
+void LCD_Cursor(unsigned char column) {
+  if ( column < 17 ) { // 16x2 LCD: column < 17; 16x1 LCD: column < 9
+    LCD_WriteCommand(0x80 + column - 1);
+    } else { // 6x2 LCD: column - 9; 16x1 LCD: column - 1
+    LCD_WriteCommand(0xB8 + column - 9);
+  }
+}
+
+void LCD_WriteData(char Data) {
+  // SET_BIT(CONTROL_BUS,RS);
+  digitalWrite(CONTROL_BUS_RS, HIGH);
+  // DATA_BUS = Data;
+  writeToDataBus(Data);
+  // SET_BIT(CONTROL_BUS,E);
+  digitalWrite(CONTROL_BUS_E, HIGH);
+  asm("nop");
+  //CLR_BIT(CONTROL_BUS,E);
+  digitalWrite(CONTROL_BUS_E, LOW);
+  delay_ms(1);
+}
+
+void clearTopRow()
+{
+  LCD_Cursor(1);
+  LCD_WriteData(' '); LCD_WriteData(' '); LCD_WriteData(' '); LCD_WriteData(' ');
+  LCD_WriteData(' '); LCD_WriteData(' '); LCD_WriteData(' '); LCD_WriteData(' ');
+  LCD_WriteData(' '); LCD_WriteData(' '); LCD_WriteData(' '); LCD_WriteData(' ');
+  LCD_WriteData(' '); LCD_WriteData(' '); LCD_WriteData(' '); LCD_WriteData(' ');
+}
+
+void clearBottomRow()
+{
+  LCD_Cursor(17);
+  LCD_WriteData(' '); LCD_WriteData(' '); LCD_WriteData(' '); LCD_WriteData(' ');
+  LCD_WriteData(' '); LCD_WriteData(' '); LCD_WriteData(' '); LCD_WriteData(' ');
+  LCD_WriteData(' '); LCD_WriteData(' '); LCD_WriteData(' '); LCD_WriteData(' ');
+  LCD_WriteData(' '); LCD_WriteData(' '); LCD_WriteData(' '); LCD_WriteData(' ');
+}
+
 void LCD_ClearScreen(void) {
-	LCD_WriteCommand(0x01);
+	//LCD_WriteCommand(0x01);
+  clearTopRow();
+  clearBottomRow();
+  LCD_Cursor(1);
 }
 
 void LCD_init(void) {
@@ -102,29 +144,8 @@ void LCD_init(void) {
 	delay_ms(10);						 
 }
 
-void LCD_WriteData(char Data) {
-	// SET_BIT(CONTROL_BUS,RS);
-	digitalWrite(CONTROL_BUS_RS, HIGH);
-	// DATA_BUS = Data;
-  writeToDataBus(Data);
-	// SET_BIT(CONTROL_BUS,E);
-	digitalWrite(CONTROL_BUS_E, HIGH);
-	asm("nop");
-	//CLR_BIT(CONTROL_BUS,E);
-	digitalWrite(CONTROL_BUS_E, LOW);
-	delay_ms(1);
-}
-
-void LCD_Cursor(unsigned char column) {
-	if ( column < 17 ) { // 16x2 LCD: column < 17; 16x1 LCD: column < 9
-		LCD_WriteCommand(0x80 + column - 1);
-		} else { // 6x2 LCD: column - 9; 16x1 LCD: column - 1
-		LCD_WriteCommand(0xB8 + column - 9);
-	}
-}
-
 void LCD_DisplayString( unsigned char column, const char* s) {
-	LCD_ClearScreen();
+	//LCD_ClearScreen();
 	unsigned char c = column;
 
 	while (*s)
