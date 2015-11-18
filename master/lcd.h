@@ -14,7 +14,7 @@
           
 /*-------------------------------------------------------------------------*/
 
-#define DATA_BUS PORTL		// port connected to pins 7-14 of LCD display
+#define DATA_BUS PORTB		// port connected to pins 7-14 of LCD display
 #define CONTROL_BUS_RS 2	// port connected to pins 4 and 6 of LCD disp.
 #define CONTROL_BUS_E 3
 #define RS 0				// pin number of uC connected to pin 4 of LCD disp.
@@ -51,13 +51,13 @@ void LCD_ClearScreen(void) {
 }
 
 void LCD_init(void) {
+  // set R and S as output
+  pinMode(CONTROL_BUS_RS, OUTPUT);
+  pinMode(CONTROL_BUS_E, OUTPUT);
+
+  DDRB = 0xFF; DATA_BUS = 0x00;
+  
 	delay_ms(100); //wait for 100 ms for LCD to power up
-
-	// set R and S as output
-	pinMode(CONTROL_BUS_RS, OUTPUT);
-	pinMode(CONTROL_BUS_E, OUTPUT);
-
-	DDRL = 0xFF; DATA_BUS = 0x00;
 
 	LCD_WriteCommand(0x38);
 	LCD_WriteCommand(0x06);

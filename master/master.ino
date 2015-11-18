@@ -22,8 +22,12 @@ void Task_DrawImage()
 
   char key = GetKeypadKey();
 
-  if (key != '\0')
+  if (key !=  '\0')
+  {
+    LCD_Cursor(18);
     LCD_WriteData(key);
+  }
+
 }
 
 void Task_Blink()
@@ -34,18 +38,11 @@ void Task_Blink()
 void setup() {
   // put your setup code here, to run once:
 
-  /*
-  DDRA = 0xFF; PORTA = 0x00; // LCD control lines, output
-  DDRC = 0xFF; PORTC = 0x00; // LCD_data lines, output
-    
-  DDRD = 0xF0; PORTD = 0x0F;; // initialize input ports for keypad
-   */
-
    LCD_init(); // LCD data lines on PORTL
    Keypad_init(); // Keypad on PortA
   
   Serial.begin(115200);
-  task1 = scheduler.insert(Task_DrawImage, ONE_SEC/5, false);
+  task1 = scheduler.insert(Task_DrawImage, ONE_SEC/8, false);
   scheduler.activate(task1);
 
   task2 = scheduler.insert(Task_Blink, ONE_SEC, false);
