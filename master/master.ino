@@ -1,3 +1,4 @@
+#include <LedControlMS.h>
 #include "Agenda.h"
 #include "keypad.h"
 #include "lcd_messages.h"
@@ -7,10 +8,31 @@
 #define ONE_SEC 1000000
 #define MIN_OPTION 1
 #define MAX_OPTION 4
+#define MOSI_PIN 51
+#define MISO_PIN 50 // LEDMAT DIN
+#define SCK_PIN 52 // LEDMAT DIN
+#define SS_LEDMAT 53 // LEDMAT CS
+#define LEDMAT_ADDR 0
 
+enum rowNum {MROW1, MROW2, MROW3, MROW4, MROW5, MROW6, MROW7, MROW8};
+enum colNum {MCOL1, MCOL2, MCOL3, MCOL4, MCOL5, MCOL6, MCOL7, MCOL8};
+
+// ================ SCHEDULER ========================
 Agenda scheduler;
 int task1, task2;
 
+// ================ LEDCONTROL ========================
+// constructor parameters: dataPin, clkPin, csPin, numDevices)
+LedControl lc = LedControl(MISO_PIN, SCK_PIN, SS_LEDMAT, 1);
+void LedControl_init()
+{
+  lc.shutdown(LEDMAT_ADDR, false);
+  lc.setIntensity(LEDMAT_ADDR, 8);
+  lc.clearDisplay(LEDMAT_ADDR);
+  //lc.setRow(LEDMAT_ADDR, MROW2, B10000001); 
+}
+
+// ================ TASK MAIN ========================
 enum T1_SM {MainInit, MainMenu, DrawMode, SyncMode, Reset} mainState;
 void Task_Main()
 {
@@ -82,6 +104,7 @@ void setup() {
   // put your setup code here, to run once:
 
    LCD_init(); // LCD data lines on PORTL
+   LedControl_init();
    Keypad_init(); // Keypad on PortA
   
   Serial.begin(115200);
