@@ -14,18 +14,17 @@
           
 /*-------------------------------------------------------------------------*/
 
-#define DATA_BUS PORTB		// port connected to pins 7-14 of LCD display
 #define CONTROL_BUS_RS 2	// port connected to pins 4 and 6 of LCD disp.
 #define CONTROL_BUS_E 3
 
-#define BIT0 12
-#define BIT1 11
-#define BIT2 10
-#define BIT3 9
-#define BIT4 8
-#define BIT5 7
-#define BIT6 6
-#define BIT7 5
+#define BIT0 11
+#define BIT1 10
+#define BIT2 9
+#define BIT3 8
+#define BIT4 7
+#define BIT5 6
+#define BIT6 5
+#define BIT7 4
 
 
 /*-------------------------------------------------------------------------*/
@@ -41,7 +40,8 @@ void delay_ms(int miliSec) { //for 8 Mhz crystal
 
 /*-------------------------------------------------------------------------*/
 
-// Added this function
+// Added this function.
+// This basically does what DATA_BUS = data did, except bitwise.  `
 void writeToDataBus(unsigned char data)
 {
   unsigned char currBit = 0;
@@ -61,14 +61,10 @@ void writeToDataBus(unsigned char data)
 }
 
 void LCD_WriteCommand (unsigned char Command) {
-	// CLR_BIT(CONTROL_BUS,RS);
 	digitalWrite(CONTROL_BUS_RS, LOW);
-	//DATA_BUS = Command;
   writeToDataBus(Command);
-	// SET_BIT(CONTROL_BUS,E);
 	digitalWrite(CONTROL_BUS_E, HIGH);
 	asm("nop");
-	// CLR_BIT(CONTROL_BUS,E);
 	digitalWrite(CONTROL_BUS_E, LOW);
 
 	delay_ms(2); // ClearScreen requires 1.52ms to execute
@@ -83,14 +79,10 @@ void LCD_Cursor(unsigned char column) {
 }
 
 void LCD_WriteData(char Data) {
-  // SET_BIT(CONTROL_BUS,RS);
   digitalWrite(CONTROL_BUS_RS, HIGH);
-  // DATA_BUS = Data;
   writeToDataBus(Data);
-  // SET_BIT(CONTROL_BUS,E);
   digitalWrite(CONTROL_BUS_E, HIGH);
   asm("nop");
-  //CLR_BIT(CONTROL_BUS,E);
   digitalWrite(CONTROL_BUS_E, LOW);
   delay_ms(1);
 }
