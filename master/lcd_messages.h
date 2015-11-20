@@ -7,7 +7,7 @@
 void displayDefaultMenu()
 {
 	LCD_ClearScreen();
-	LCD_DisplayString(1, "LEDsDraw");
+	LCD_DisplayString(1, "LedsDraw");
 	LCD_DisplayString(17, "1.Draw");
 }
 
@@ -32,7 +32,14 @@ void displayDrawMode()
 {
 	LCD_ClearScreen();
 	LCD_DisplayString(1, "Drawing");
-	LCD_DisplayString(17, "A.Save  B.Cancel");
+	LCD_DisplayString(17, "A.Save  B.Done");
+}
+
+void displayDrawModeAsk()
+{
+  LCD_ClearScreen();
+  LCD_DisplayString(1, "Draw on which?");
+  LCD_DisplayString(17, "A.F1, B.F2, C.F3");
 }
 
 void displaySyncMode()

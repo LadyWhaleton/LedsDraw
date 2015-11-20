@@ -31,6 +31,7 @@ struct Pattern
 
 Pattern DefaultFrames[numFrames];
 Pattern Frames[numFrames];
+Pattern EditedPattern;
 
 void Pattern_init()
 {

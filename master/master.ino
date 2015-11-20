@@ -21,11 +21,15 @@
 #define TILT_B0 48
 #define TILT_B1 49
 
+// ================ SHARED GLOBALS ACROSS TASKS ========================
 enum rowNum {MROW1, MROW2, MROW3, MROW4, MROW5, MROW6, MROW7, MROW8};
 enum colNum {MCOL1, MCOL2, MCOL3, MCOL4, MCOL5, MCOL6, MCOL7, MCOL8};
 
 char key;
 int menuOption;
+
+char cursorCol;
+char cursorRow;
 
 // ================ SCHEDULER ========================
 Agenda scheduler;
@@ -82,7 +86,7 @@ void animateFrames()
 // ********************************************************************
 
 // ================ TASK MAIN ========================
-enum T1_SM {MainInit, MainMenu, DrawMode, SyncMode, Reset} mainState;
+enum T1_SM {MainInit, MainMenu, DrawModeAsk, DrawMode, SyncMode, Reset} mainState;
 void Task_Main()
 {
   key = GetKeypadKey();
@@ -106,12 +110,13 @@ void Task_Main()
         menuOption++;
         displayMenuOption(menuOption);
       }
+      
       else if (key == '5') // user selected something
       {
         if (menuOption == 1)
         {
-          displayDrawMode();
-          mainState = DrawMode;
+          displayDrawModeAsk();
+          mainState = DrawModeAsk;
         }
         else if (menuOption == 2)
         {
@@ -121,12 +126,82 @@ void Task_Main()
       }
       break;
 
-    case DrawMode:
-      if (key == 'B')
+    case DrawModeAsk:
+      if (key == 'A' || key == 'B' || key == 'C')
       {
+        if (key == 'A') frameIndex = 0;
+        else if (key == 'B') frameIndex = 1;
+        else if (key == 'C') frameIndex = 2;
+
+        // display pattern first
+        EditedPattern = Frames[frameIndex];
+        displayPattern(EditedPattern);
+
+        // display the cursor
+        cursorCol = MCOL1; cursorRow = MROW1;
+        lc.setLed(LEDMAT_ADDR, cursorRow, cursorCol, true);
+        
+        displayDrawMode();
+        mainState = DrawMode;
+      }
+      break;
+
+    case DrawMode:
+      if (key == 'A') // save
+        Frames[frameIndex] = EditedPattern;
+   
+      else if (key == 'B') // done
+      {
+        // revert the pattern to it's original
+        EditedPattern = Frames[frameIndex];
+        displayPattern(EditedPattern);
+
+        // return to and display main menu 
         displayDefaultMenu();
         mainState = MainMenu;
       }
+      
+      else if (key == '5') // draw or clear the point
+      {
+        // Check if there's already a dot there
+        byte mask = B10000000;
+        byte newRowPattern = EditedPattern.row[cursorRow];
+        mask = newRowPattern & (mask >> cursorCol);
+
+        if (mask > 0) // dot is drawn, so clear the dot
+          newRowPattern = newRowPattern & (~(B10000000 >> cursorCol));
+
+        else // nothing drawn, so set the dot on
+          newRowPattern = newRowPattern | (B10000000 >> cursorCol);
+
+        // update the editedPattern
+        EditedPattern.row[cursorRow] = newRowPattern;
+
+        // display the new pattern
+        displayPattern(EditedPattern);
+
+        // redisplay the cursor
+        lc.setLed(LEDMAT_ADDR, cursorRow, cursorCol, true);
+      }
+
+      // cursor movement
+      else if (key == '2' || key == '8' || key == '4' || key == '6')
+      {
+        // Before we update the cursor, clear it's current position
+        lc.setLed(LEDMAT_ADDR, cursorRow, cursorCol, false);
+
+        // redisplay the Pattern
+        displayPattern(EditedPattern);
+        
+        if (key == '2' && cursorRow != MROW1) cursorRow--; // move up
+        else if (key == '8' && cursorRow != MROW8) cursorRow++; // move down
+        else if (key == '4' && cursorCol != MCOL1) cursorCol--;// move left
+        else if (key == '6' && cursorCol != MCOL8) cursorCol++;// move right  
+        
+        // Now, we can update the cursor position on the LED Matrix
+        lc.setLed(LEDMAT_ADDR, cursorRow, cursorCol, true);
+      }
+      
       break;
 
     case SyncMode:
@@ -140,7 +215,6 @@ void Task_Main()
     default:
       mainState = MainInit;
   }
-
 }
 
 // ================ TASK LED MATRIX ========================
