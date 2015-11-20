@@ -148,7 +148,10 @@ void Task_Main()
 
     case DrawMode:
       if (key == 'A') // save
+      {
         Frames[frameIndex] = EditedPattern;
+        displayClearFlag();
+      }
    
       else if (key == 'B') // done
       {
@@ -159,6 +162,16 @@ void Task_Main()
         // return to and display main menu 
         displayDefaultMenu();
         mainState = MainMenu;
+      }
+
+      else if (key == 'C') // clear
+      {
+        // clear the pattern, clear led matrix, redisplay cursor
+        EditedPattern.clearPattern();
+        displayPattern(EditedPattern);
+        lc.setLed(LEDMAT_ADDR, cursorRow, cursorCol, true);
+
+        displayFlag("!");
       }
       
       else if (key == '5') // draw or clear the point
@@ -182,6 +195,9 @@ void Task_Main()
 
         // redisplay the cursor
         lc.setLed(LEDMAT_ADDR, cursorRow, cursorCol, true);
+
+        // indicate that picture has been changed.
+        displayFlag("!");
       }
 
       // cursor movement

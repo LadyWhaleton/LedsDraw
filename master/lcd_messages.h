@@ -39,7 +39,7 @@ void displayDrawModeAsk()
 {
   LCD_ClearScreen();
   LCD_DisplayString(1, "Draw on which?");
-  LCD_DisplayString(17, "A.F1, B.F2, C.F3");
+  LCD_DisplayString(17, "A.F1  B.F2  C.F3");
 }
 
 void displaySyncMode()
@@ -47,6 +47,16 @@ void displaySyncMode()
 	LCD_ClearScreen();
 	LCD_DisplayString(1, "Syncing");
 	LCD_DisplayString(17, "B.Unsync");
+}
+
+void displayFlag(char* f)
+{
+  LCD_DisplayString(16, f);
+}
+
+void displayClearFlag()
+{
+  LCD_DisplayString(16, " ");
 }
 
 
