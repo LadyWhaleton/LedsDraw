@@ -9,6 +9,7 @@
 #define ONE_SEC 1000000
 #define TASK_LEDMAT_PERIOD 100000
 #define FRAME_TIME 200000
+#define CURSOR_TIME 300000
 #define MIN_OPTION 1
 #define MAX_OPTION 4
 
@@ -44,6 +45,9 @@ LedControl lc = LedControl(MOSI_PIN, SCK_PIN, SS_LEDMAT, 1);
 
 int frameIndex = 0;
 long frameTime = FRAME_TIME;
+
+bool ledCursorOn = false;
+long cursorBlinkTime = CURSOR_TIME;
 
 void LedControl_init()
 {
@@ -140,6 +144,8 @@ void Task_Main()
         // display the cursor
         cursorCol = MCOL1; cursorRow = MROW1;
         lc.setLed(LEDMAT_ADDR, cursorRow, cursorCol, true);
+        ledCursorOn = true;
+        cursorBlinkTime = CURSOR_TIME;
         
         displayDrawMode();
         mainState = DrawMode;
@@ -147,6 +153,34 @@ void Task_Main()
       break;
 
     case DrawMode:
+      // blink the cursor
+      if (ledCursorOn)
+      {
+        if (cursorBlinkTime < 0)
+        {
+          cursorBlinkTime = CURSOR_TIME;
+          ledCursorOn = false;
+          lc.setLed(LEDMAT_ADDR, cursorRow, cursorCol, ledCursorOn);
+        }
+
+        else
+          cursorBlinkTime -= TASK_LEDMAT_PERIOD;
+      }
+
+      else if (!ledCursorOn)
+      {
+        if (cursorBlinkTime < 0)
+        {
+          cursorBlinkTime = CURSOR_TIME;
+          ledCursorOn = true;
+          lc.setLed(LEDMAT_ADDR, cursorRow, cursorCol, ledCursorOn);
+        }
+
+        else
+          cursorBlinkTime -= TASK_LEDMAT_PERIOD;
+      }
+      
+      
       if (key == 'A') // save
       {
         Frames[frameIndex] = EditedPattern;
@@ -195,6 +229,8 @@ void Task_Main()
 
         // redisplay the cursor
         lc.setLed(LEDMAT_ADDR, cursorRow, cursorCol, true);
+        ledCursorOn = true;
+        cursorBlinkTime = CURSOR_TIME;
 
         // indicate that picture has been changed.
         displayFlag("!");
@@ -216,6 +252,8 @@ void Task_Main()
         
         // Now, we can update the cursor position on the LED Matrix
         lc.setLed(LEDMAT_ADDR, cursorRow, cursorCol, true);
+        ledCursorOn = true;
+        cursorBlinkTime = CURSOR_TIME;
       }
       
       break;
