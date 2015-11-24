@@ -19,8 +19,10 @@
 #define SCK_PIN 52 // LEDMAT CLK
 #define SS_LEDMAT 53 // LEDMAT CS
 #define LEDMAT_ADDR 0
-#define TILT_B0 48
-#define TILT_B1 49
+#define TILT_B0 46
+#define TILT_B1 47
+#define TILT_B2 48
+#define TILT_B3 49
 
 // ================ SHARED GLOBALS ACROSS TASKS ========================
 enum rowNum {MROW1, MROW2, MROW3, MROW4, MROW5, MROW6, MROW7, MROW8};
@@ -38,6 +40,64 @@ int task1, task2, task3;
 
 // ================ TILT SENSOR ========================
 enum TiltDir {UP, DOWN, LEFT, RIGHT, CENTER} tiltDirection;
+
+// what if there is no pattern??
+void shiftPattern(Pattern &p)
+{
+  // First, compute the boundaries of pattern
+  byte mask;
+  unsigned char bTop, bBot, bLeft, bRight = 8;
+  byte rowPattern;
+
+  // find boundary for top and left
+  for (unsigned char row = 0; row < 8; ++row)
+  {
+    rowPattern = p.row[row];
+    mask = B10000000;
+
+    // check columns
+    for (unsigned char col = 0; col < 8; ++col)
+    {
+       if (mask & rowPattern > 0)
+       {
+          bLeft = col;
+          break;
+       }
+    }
+
+    // check rows
+    if (row < bTop && rowPattern > 0)
+    {
+      bTop = row;
+      break;
+    }
+  }
+
+  // find boundary for bottom and right
+  for (unsigned char row = 0; row < 8; ++row)
+  {
+    rowPattern = p.row[row];
+    mask = B10000000;
+
+    // check columns
+    for (unsigned char col = 0; col < 8; ++col)
+    {
+       if (mask & rowPattern > 0)
+       {
+          bLeft = col;
+          break;
+       }
+    }
+
+    // check rows
+    if (row < bTop && rowPattern > 0)
+    {
+      bTop = row;
+      break;
+    }
+  }
+  
+}
 
 // ================ LED MATRIX ========================
 // constructor parameters: dataPin, clkPin, csPin, numDevices)
@@ -309,51 +369,57 @@ void Task_LedMat()
   }
 }
 // ================ TASK TILT ========================
-enum T3_SM {InitPos, ShiftUP, ShiftDOWN, ShiftLEFT, ShiftRIGHT} tiltState;
+enum T3_SM {NoShift, ShiftUP, ShiftDOWN, ShiftLEFT, ShiftRIGHT} tiltState;
 
-// 00: left, 01: down, 10: up (default), 11: right
+// center: 0111, left: 0011, right: 1100, up: 0110, down: 1001
 void Task_Tilt()
 {
   /*
-  Serial.print("Bit0: ");
-  Serial.print(digitalRead(TILT_B0), DEC);
-  Serial.print("; ");
-  Serial.print("Bit1: ");
-  Serial.println(digitalRead(TILT_B1), DEC);
+  Serial.print(digitalRead(TILT_B3), DEC);
+  Serial.print(digitalRead(TILT_B2), DEC);
+  Serial.print(digitalRead(TILT_B1), DEC);
+  Serial.println(digitalRead(TILT_B0), DEC);
   */
 
   char b0 = digitalRead(TILT_B0);
   char b1 = digitalRead(TILT_B1);
+  char b2 = digitalRead(TILT_B2);
+  char b3 = digitalRead(TILT_B3);
 
   switch (tiltState)
   {
-    case InitPos: // 10 (default)
-      if (!b1 && b0) // 01 (down)
-      {
-        tiltDirection = DOWN;
-        tiltState = ShiftDOWN;
-      }
-      else if (!b1 && !b0) // 00 (left)
+    case NoShift: // center
+      if (!b3 && !b2 && b1 && b0) // left
       {
         tiltDirection = LEFT;
         tiltState = ShiftLEFT;
       }
-      else if (b1 && b0) // 11 (right)
+      else if (b3 && b2 && !b1 && !b0) // right
       {
         tiltDirection = RIGHT;
         tiltState = ShiftRIGHT;
       }
-      else
+      else if (!b3 && b2 && b1 && !b0) // up
+      {
+        tiltDirection = UP;
+        tiltState = ShiftUP;
+      }
+      else if (b3 && !b2 && !b1 && b0) // down
+      {
+        tiltDirection = DOWN;
+        tiltState = ShiftDOWN;
+      }
+      else 
       {
         tiltDirection = CENTER;
-        tiltState = InitPos;
+        tiltState = NoShift;
       }
       break;
     case ShiftDOWN:
 
       break;
     default:
-      tiltState = InitPos;
+      tiltState = NoShift;
   }
 }
 
@@ -367,14 +433,14 @@ void setup() {
   Serial.begin(115200);
   
   mainState = MainInit;
-  task1 = scheduler.insert(Task_Main, ONE_SEC/8, false);
+  task1 = scheduler.insert(Task_Main, ONE_SEC/4, false);
   scheduler.activate(task1);
 
   ledState = Idle;
   task2 = scheduler.insert(Task_LedMat, TASK_LEDMAT_PERIOD, false);
   scheduler.activate(task2);
 
-  tiltState = InitPos;
+  tiltState = NoShift;
   task2 = scheduler.insert(Task_Tilt, ONE_SEC/8, false);
   scheduler.activate(task3);
 }
