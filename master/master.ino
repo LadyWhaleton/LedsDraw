@@ -331,11 +331,8 @@ void Task_Tilt()
   if (key == '#')
   {
     int top, bottom, left, right;
-    Serial.println("hi");
     getPatternBoundaries(Frames[1], top, bottom, left, right);
 
-  
-    
     Serial.print("top: "); Serial.println(top);
     Serial.print("bot: "); Serial.println(bottom);
     Serial.print("left: "); Serial.println(left);

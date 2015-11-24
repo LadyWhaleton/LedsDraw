@@ -101,34 +101,28 @@ void getPatternBoundaries(const Pattern &p, int &top, int &bot, int &left, int &
   int topMost = 10;
   int botMost = -1;
 
-  int leftMost = 11;
+  int leftMost = 10;
   int rightMost = -2;
   
-  int temp = 10;
+  int temp;
 
   // find boundary for top and left
   for (int row = 0; row < 8; ++row)
   {
-    Serial.print(row); Serial.print(" ");
     rowPattern = p.row[row];
     mask = B10000000;
 
     temp = 10;
-    
+
     // check columns for this row
     for (int col = 0; col < 8; ++col)
     {
-      Serial.print(col);
       // determine the farthest pixel on left for this row
-      if (col < temp && mask & rowPattern > 0)
-      {
+      if ( col < temp && (mask & rowPattern) > 0)
           temp = col;
-          break;
-      }
-
+      
        mask = mask >> 1;
     }
-    Serial.println(" ");
 
     // check rows
     if (row < topMost && rowPattern > 0)
@@ -137,6 +131,7 @@ void getPatternBoundaries(const Pattern &p, int &top, int &bot, int &left, int &
     // check if temp is the farthest pixel on left seen so far
     if (temp < leftMost)
       leftMost = temp;
+      
   }
 
   
@@ -152,12 +147,10 @@ void getPatternBoundaries(const Pattern &p, int &top, int &bot, int &left, int &
     for (int col = 7; col >= 0; --col)
     {
       // determine the farthest pixel on right for this row
-      if (col > temp && mask & rowPattern > 0)
-      {
+      if (col > temp && (mask & rowPattern) > 0)
           temp = col;
-          break;
-      }
-       mask = mask >> 1;
+          
+       mask = mask << 1;
     }
 
     // check rows
