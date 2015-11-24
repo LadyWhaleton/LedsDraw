@@ -8,8 +8,9 @@
 // ================ GLOBALS ========================
 #define ONE_SEC 1000000
 #define TASK_LEDMAT_PERIOD 100000
+#define TASK_KEYPAD_PERIOD 50000
 #define FRAME_TIME 200000
-#define CURSOR_TIME 300000
+#define CURSOR_TIME 100000
 #define MIN_OPTION 1
 #define MAX_OPTION 4
 
@@ -36,68 +37,10 @@ char cursorRow;
 
 // ================ SCHEDULER ========================
 Agenda scheduler;
-int task1, task2, task3;
+int task0, task1, task2, task3;
 
 // ================ TILT SENSOR ========================
 enum TiltDir {UP, DOWN, LEFT, RIGHT, CENTER} tiltDirection;
-
-// what if there is no pattern??
-void shiftPattern(Pattern &p)
-{
-  // First, compute the boundaries of pattern
-  byte mask;
-  unsigned char bTop, bBot, bLeft, bRight = 8;
-  byte rowPattern;
-
-  // find boundary for top and left
-  for (unsigned char row = 0; row < 8; ++row)
-  {
-    rowPattern = p.row[row];
-    mask = B10000000;
-
-    // check columns
-    for (unsigned char col = 0; col < 8; ++col)
-    {
-       if (mask & rowPattern > 0)
-       {
-          bLeft = col;
-          break;
-       }
-    }
-
-    // check rows
-    if (row < bTop && rowPattern > 0)
-    {
-      bTop = row;
-      break;
-    }
-  }
-
-  // find boundary for bottom and right
-  for (unsigned char row = 0; row < 8; ++row)
-  {
-    rowPattern = p.row[row];
-    mask = B10000000;
-
-    // check columns
-    for (unsigned char col = 0; col < 8; ++col)
-    {
-       if (mask & rowPattern > 0)
-       {
-          bLeft = col;
-          break;
-       }
-    }
-
-    // check rows
-    if (row < bTop && rowPattern > 0)
-    {
-      bTop = row;
-      break;
-    }
-  }
-  
-}
 
 // ================ LED MATRIX ========================
 // constructor parameters: dataPin, clkPin, csPin, numDevices)
@@ -149,12 +92,16 @@ void animateFrames()
 // ******************* TASKS*******************************************
 // ********************************************************************
 
+// ================ TASK LED MATRIX ========================
+void Task_Keypad()
+{
+  key = GetKeypadKey();
+}
+
 // ================ TASK MAIN ========================
 enum T1_SM {MainInit, MainMenu, DrawModeAsk, DrawMode, SyncMode, Reset} mainState;
 void Task_Main()
 {
-  key = GetKeypadKey();
-
   switch (mainState)
   {
     case MainInit:
@@ -216,9 +163,9 @@ void Task_Main()
       // blink the cursor
       if (ledCursorOn)
       {
-        if (cursorBlinkTime < 0)
+        if (cursorBlinkTime <= 0)
         {
-          cursorBlinkTime = CURSOR_TIME;
+          cursorBlinkTime = CURSOR_TIME*2;
           ledCursorOn = false;
           lc.setLed(LEDMAT_ADDR, cursorRow, cursorCol, ledCursorOn);
         }
@@ -237,7 +184,7 @@ void Task_Main()
         }
 
         else
-          cursorBlinkTime -= TASK_LEDMAT_PERIOD;
+          cursorBlinkTime -= CURSOR_TIME;
       }
       
       
@@ -381,6 +328,21 @@ void Task_Tilt()
   Serial.println(digitalRead(TILT_B0), DEC);
   */
 
+  if (key == '#')
+  {
+    int top, bottom, left, right;
+    Serial.println("hi");
+    getPatternBoundaries(Frames[1], top, bottom, left, right);
+
+  
+    
+    Serial.print("top: "); Serial.println(top);
+    Serial.print("bot: "); Serial.println(bottom);
+    Serial.print("left: "); Serial.println(left);
+    Serial.print("right: "); Serial.println(right);
+    
+  }
+  
   char b0 = digitalRead(TILT_B0);
   char b1 = digitalRead(TILT_B1);
   char b2 = digitalRead(TILT_B2);
@@ -431,9 +393,12 @@ void setup() {
   Keypad_init(); // Keypad on PortA
   
   Serial.begin(115200);
+
+  task0 = scheduler.insert(Task_Keypad, TASK_KEYPAD_PERIOD, false);
+  scheduler.activate(task0);
   
   mainState = MainInit;
-  task1 = scheduler.insert(Task_Main, ONE_SEC/4, false);
+  task1 = scheduler.insert(Task_Main, ONE_SEC/6, false);
   scheduler.activate(task1);
 
   ledState = Idle;
