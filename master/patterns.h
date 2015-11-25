@@ -1,6 +1,8 @@
 #ifndef PATTERNS_H
 #define PATTERNS_H
 
+#include "lcd_messages.h"
+
 #define numFrames 3
 
 struct Pattern
@@ -28,7 +30,7 @@ struct Pattern
   }
 
   // returns 1 if empty, 0 otherwise
-  bool emptyPattern()
+  bool isEmpty()
   {
     for (int i = 0; i < 8; ++i)
       if (row[i] > 0)
@@ -94,20 +96,20 @@ void resetFrames()
 
 
 // Determines the boundaries of the pattern
-void getPatternBoundaries(const Pattern &p, int &top, int &bot, int &left, int &right)
+void getPatternBoundaries(const Pattern &p, char &top, char &bot, char &left, char &right)
 {
   byte mask;
   byte rowPattern;
-  int topMost = 10;
-  int botMost = -1;
+  char topMost = 10;
+  char botMost = -1;
 
-  int leftMost = 10;
-  int rightMost = -2;
+  char leftMost = 10;
+  char rightMost = -2;
   
-  int temp;
+  char temp;
 
   // find boundary for top and left
-  for (int row = 0; row < 8; ++row)
+  for (char row = 0; row < 8; ++row)
   {
     rowPattern = p.row[row];
     mask = B10000000;
@@ -115,7 +117,7 @@ void getPatternBoundaries(const Pattern &p, int &top, int &bot, int &left, int &
     temp = 10;
 
     // check columns for this row
-    for (int col = 0; col < 8; ++col)
+    for (char col = 0; col < 8; ++col)
     {
       // determine the farthest pixel on left for this row
       if ( col < temp && (mask & rowPattern) > 0)
@@ -131,12 +133,10 @@ void getPatternBoundaries(const Pattern &p, int &top, int &bot, int &left, int &
     // check if temp is the farthest pixel on left seen so far
     if (temp < leftMost)
       leftMost = temp;
-      
   }
-
   
   // find boundary for bottom and right
-  for (int row = 7; row >= 0; --row)
+  for (char row = 7; row >= 0; --row)
   {
     rowPattern = p.row[row];
     mask = B00000001;
@@ -144,7 +144,7 @@ void getPatternBoundaries(const Pattern &p, int &top, int &bot, int &left, int &
     temp = -1;
 
     // check columns for this row
-    for (int col = 7; col >= 0; --col)
+    for (char col = 7; col >= 0; --col)
     {
       // determine the farthest pixel on right for this row
       if (col > temp && (mask & rowPattern) > 0)
@@ -163,8 +163,46 @@ void getPatternBoundaries(const Pattern &p, int &top, int &bot, int &left, int &
   }
 
   top = topMost; bot = botMost; left = leftMost; right = rightMost;
-  
 }
 
+// Takes in two parameters, the pattern to be modified and the shift direction
+void shiftPattern(Pattern& p, char shiftDir )
+{
+  // first, check if the pattern is empty
+  if ( p.isEmpty() )
+    return;
+
+  // otherwise, get the boundaries of the pattern
+  char top, bottom, left, right;
+  getPatternBoundaries(p, top, bottom, left, right);
+
+  if (shiftDir == 0 && top != 0) // shift up
+  {
+    displayFlag("!");
+    for (char i = 1; i < 8; ++i)
+      p.row[i-1] = p.row[i];
+  }
+
+  else if (shiftDir == 1 && bottom != 7) // shift down
+  {
+    displayFlag("!");
+    for (char i = 7; i >= 1; --i)
+      p.row[i] = p.row[i-1];
+  }
+
+  else if (shiftDir == 0 && left != 0) // shift left
+  {
+    displayFlag("!");
+    for (char i = 0; i < 8; i++)
+      p.row[i] = p.row[i] << 1;
+  }
+
+  else if (shiftDir == 7 && right != 7) // shift right
+  {
+    displayFlag("!");
+    for (char i = 0; i < 8; i++)
+      p.row[i] = p.row[i] >> 1;
+  }
+}
 
 #endif

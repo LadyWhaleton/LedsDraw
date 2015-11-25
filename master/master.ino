@@ -32,8 +32,12 @@ enum colNum {MCOL1, MCOL2, MCOL3, MCOL4, MCOL5, MCOL6, MCOL7, MCOL8};
 char key;
 int menuOption;
 
+// for cursors
 char cursorCol;
 char cursorRow;
+
+// mode flags
+bool drawModeOn = false;
 
 // ================ SCHEDULER ========================
 Agenda scheduler;
@@ -98,7 +102,7 @@ void Task_Keypad()
   key = GetKeypadKey();
 }
 
-// ================ TASK MAIN ========================
+// ================ TASK MAIN ===================================
 enum T1_SM {MainInit, MainMenu, DrawModeAsk, DrawMode, SyncMode, Reset} mainState;
 void Task_Main()
 {
@@ -155,6 +159,7 @@ void Task_Main()
         cursorBlinkTime = CURSOR_TIME;
         
         displayDrawMode();
+        drawModeOn = true;
         mainState = DrawMode;
       }
       break;
@@ -186,8 +191,11 @@ void Task_Main()
         else
           cursorBlinkTime -= CURSOR_TIME;
       }
+
+      // process tilting
       
       
+      // process key presses
       if (key == 'A') // save
       {
         Frames[frameIndex] = EditedPattern;
@@ -287,7 +295,7 @@ void Task_LedMat()
   switch (ledState)
   {
     case Idle:
-      if (key == '*')
+      if (key == '*' && !drawModeOn)
       {
         frameIndex = 0;
         frameTime = FRAME_TIME;
@@ -327,18 +335,6 @@ void Task_Tilt()
   Serial.print(digitalRead(TILT_B1), DEC);
   Serial.println(digitalRead(TILT_B0), DEC);
   */
-
-  if (key == '#')
-  {
-    int top, bottom, left, right;
-    getPatternBoundaries(Frames[1], top, bottom, left, right);
-
-    Serial.print("top: "); Serial.println(top);
-    Serial.print("bot: "); Serial.println(bottom);
-    Serial.print("left: "); Serial.println(left);
-    Serial.print("right: "); Serial.println(right);
-    
-  }
   
   char b0 = digitalRead(TILT_B0);
   char b1 = digitalRead(TILT_B1);
