@@ -1,43 +1,11 @@
 #include <LedControlMS.h>
 #include "Agenda.h"
 #include "keypad.h"
-#include "patterns.h"
-#include "lcd_messages.h"
+#include "helper.h"
 #include <avr/io.h>
 
-// ================ GLOBALS ========================
-#define ONE_SEC 1000000
-#define TASK_LEDMAT_PERIOD 100000
-#define TASK_KEYPAD_PERIOD 50000
-#define FRAME_TIME 200000
-#define CURSOR_TIME 100000
-#define MIN_OPTION 1
-#define MAX_OPTION 4
-
-// ================ PIN MAPPING ========================
-#define MOSI_PIN 51 // LEDMAT DIN
-#define MISO_PIN 50 
-#define SCK_PIN 52 // LEDMAT CLK
-#define SS_LEDMAT 53 // LEDMAT CS
-#define LEDMAT_ADDR 0
-#define TILT_B0 46
-#define TILT_B1 47
-#define TILT_B2 48
-#define TILT_B3 49
-
 // ================ SHARED GLOBALS ACROSS TASKS ========================
-enum rowNum {MROW1, MROW2, MROW3, MROW4, MROW5, MROW6, MROW7, MROW8};
-enum colNum {MCOL1, MCOL2, MCOL3, MCOL4, MCOL5, MCOL6, MCOL7, MCOL8};
-
 char key;
-int menuOption;
-
-// for cursors
-char cursorCol;
-char cursorRow;
-
-// mode flags
-bool drawModeOn = false;
 
 // ================ SCHEDULER ========================
 Agenda scheduler;
@@ -45,53 +13,6 @@ int task0, task1, task2, task3;
 
 // ================ TILT SENSOR ========================
 enum TiltDir {UP, DOWN, LEFT, RIGHT, CENTER} tiltDirection;
-
-// ================ LED MATRIX ========================
-// constructor parameters: dataPin, clkPin, csPin, numDevices)
-LedControl lc = LedControl(MOSI_PIN, SCK_PIN, SS_LEDMAT, 1);
-
-int frameIndex = 0;
-long frameTime = FRAME_TIME;
-
-bool ledCursorOn = false;
-long cursorBlinkTime = CURSOR_TIME;
-
-void LedControl_init()
-{
-  lc.shutdown(LEDMAT_ADDR, false);
-  lc.setIntensity(LEDMAT_ADDR, 3);
-  lc.clearDisplay(LEDMAT_ADDR);
-}
-
-void displayPattern(const Pattern& p)
-{
-  lc.clearDisplay(LEDMAT_ADDR);
-
-  for (int i = 0; i < 8; i++)
-    lc.setRow(LEDMAT_ADDR, i, p.row[i]);
-}
-
-void animateFrames()
-{
-  // if frameTime > 0, stay on same frame. Decrement frameTime
-  if (frameTime > 0) 
-  {
-    displayPattern(Frames[frameIndex]);
-    frameTime -= TASK_LEDMAT_PERIOD;
-  }
-
-  // otherwise, it's time to move onto the next frame
-  else
-  {
-    frameTime = FRAME_TIME;
-    
-    if (frameIndex != numFrames-1)
-      frameIndex++;
-
-    else
-      frameIndex = 0;
-  }   
-}
 
 // ******************* TASKS*******************************************
 // ********************************************************************
@@ -106,6 +27,8 @@ void Task_Keypad()
 enum T1_SM {MainInit, MainMenu, DrawModeAsk, DrawMode, SyncMode, Reset} mainState;
 void Task_Main()
 {
+  static int menuOption;
+  
   switch (mainState)
   {
     case MainInit:
@@ -144,56 +67,17 @@ void Task_Main()
     case DrawModeAsk:
       if (key == 'A' || key == 'B' || key == 'C')
       {
-        if (key == 'A') frameIndex = 0;
-        else if (key == 'B') frameIndex = 1;
-        else if (key == 'C') frameIndex = 2;
-
-        // display pattern first
-        EditedPattern = Frames[frameIndex];
-        displayPattern(EditedPattern);
-
-        // display the cursor
-        cursorCol = MCOL1; cursorRow = MROW1;
-        lc.setLed(LEDMAT_ADDR, cursorRow, cursorCol, true);
-        ledCursorOn = true;
-        cursorBlinkTime = CURSOR_TIME;
-        
+        drawModeSetup(key);
         displayDrawMode();
-        drawModeOn = true;
         mainState = DrawMode;
       }
       break;
 
     case DrawMode:
       // blink the cursor
-      if (ledCursorOn)
-      {
-        if (cursorBlinkTime <= 0)
-        {
-          cursorBlinkTime = CURSOR_TIME*2;
-          ledCursorOn = false;
-          lc.setLed(LEDMAT_ADDR, cursorRow, cursorCol, ledCursorOn);
-        }
-
-        else
-          cursorBlinkTime -= TASK_LEDMAT_PERIOD;
-      }
-
-      else if (!ledCursorOn)
-      {
-        if (cursorBlinkTime < 0)
-        {
-          cursorBlinkTime = CURSOR_TIME;
-          ledCursorOn = true;
-          lc.setLed(LEDMAT_ADDR, cursorRow, cursorCol, ledCursorOn);
-        }
-
-        else
-          cursorBlinkTime -= CURSOR_TIME;
-      }
-
-      // process tilting
+      blinkCursor();
       
+      // process tilting
       
       // process key presses
       if (key == 'A') // save
@@ -210,6 +94,7 @@ void Task_Main()
 
         // return to and display main menu 
         displayDefaultMenu();
+        drawModeOn = false;
         mainState = MainMenu;
       }
 
@@ -224,52 +109,11 @@ void Task_Main()
       }
       
       else if (key == '5') // draw or clear the point
-      {
-        // Check if there's already a dot there
-        byte mask = B10000000;
-        byte newRowPattern = EditedPattern.row[cursorRow];
-        mask = newRowPattern & (mask >> cursorCol);
-
-        if (mask > 0) // dot is drawn, so clear the dot
-          newRowPattern = newRowPattern & (~(B10000000 >> cursorCol));
-
-        else // nothing drawn, so set the dot on
-          newRowPattern = newRowPattern | (B10000000 >> cursorCol);
-
-        // update the editedPattern
-        EditedPattern.row[cursorRow] = newRowPattern;
-
-        // display the new pattern
-        displayPattern(EditedPattern);
-
-        // redisplay the cursor
-        lc.setLed(LEDMAT_ADDR, cursorRow, cursorCol, true);
-        ledCursorOn = true;
-        cursorBlinkTime = CURSOR_TIME;
-
-        // indicate that picture has been changed.
-        displayFlag("!");
-      }
+        plotPoint();
 
       // cursor movement
       else if (key == '2' || key == '8' || key == '4' || key == '6')
-      {
-        // Before we update the cursor, clear it's current position
-        lc.setLed(LEDMAT_ADDR, cursorRow, cursorCol, false);
-
-        // redisplay the Pattern
-        displayPattern(EditedPattern);
-        
-        if (key == '2' && cursorRow != MROW1) cursorRow--; // move up
-        else if (key == '8' && cursorRow != MROW8) cursorRow++; // move down
-        else if (key == '4' && cursorCol != MCOL1) cursorCol--;// move left
-        else if (key == '6' && cursorCol != MCOL8) cursorCol++;// move right  
-        
-        // Now, we can update the cursor position on the LED Matrix
-        lc.setLed(LEDMAT_ADDR, cursorRow, cursorCol, true);
-        ledCursorOn = true;
-        cursorBlinkTime = CURSOR_TIME;
-      }
+        moveCursor(key);
       
       break;
 
