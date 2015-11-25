@@ -181,9 +181,7 @@ bool shiftPattern(Pattern& p, char shiftDir )
 
   if (shiftDir == 0 && top != 0) // shift up
   {
-    displayFlag("!");
     patternChanged = true;
-    
     for (char i = 1; i < 8; ++i)
       p.row[i-1] = p.row[i];
     p.row[7] = B00000000;
@@ -191,7 +189,6 @@ bool shiftPattern(Pattern& p, char shiftDir )
 
   else if (shiftDir == 1 && bottom != 7) // shift down
   {
-    displayFlag("!");
     patternChanged = true;
     for (char i = 7; i >= 1; --i)
       p.row[i] = p.row[i-1];
@@ -200,7 +197,6 @@ bool shiftPattern(Pattern& p, char shiftDir )
 
   else if (shiftDir == 2 && left != 0) // shift left
   {
-    displayFlag("!");
     patternChanged = true;
     for (char i = 0; i < 8; i++)
       p.row[i] = p.row[i] << 1;
@@ -208,7 +204,6 @@ bool shiftPattern(Pattern& p, char shiftDir )
 
   else if (shiftDir == 3 && right != 7) // shift right
   {
-    displayFlag("!");
     patternChanged = true;
     for (char i = 0; i < 8; i++)
       p.row[i] = p.row[i] >> 1;

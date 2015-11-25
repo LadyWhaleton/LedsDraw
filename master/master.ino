@@ -79,7 +79,10 @@ void Task_Main()
       
       // if pattern has been shifted, redisplay the pattern
       if ( shiftPattern(EditedPattern, tiltDirection) )
+      {
+        displayFlag("!");
         displayPattern(EditedPattern);
+      }
       
       // process key presses
       if (key == 'A') // save
