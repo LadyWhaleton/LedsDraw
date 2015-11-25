@@ -151,8 +151,6 @@ void moveCursor(char k)
 	cursorBlinkTime = CURSOR_TIME;
 }
 
-//
-
 // this function is called when the user presses '5'
 void plotPoint()
 {

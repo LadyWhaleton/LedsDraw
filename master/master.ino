@@ -77,7 +77,9 @@ void Task_Main()
       // blink the cursor
       blinkCursor();
       
-      // process tilting
+      // if pattern has been shifted, redisplay the pattern
+      if ( shiftPattern(EditedPattern, tiltDirection) )
+        displayPattern(EditedPattern);
       
       // process key presses
       if (key == 'A') // save
@@ -168,7 +170,7 @@ void Task_LedMat()
   }
 }
 // ================ TASK TILT ========================
-enum T3_SM {NoShift, ShiftUP, ShiftDOWN, ShiftLEFT, ShiftRIGHT} tiltState;
+enum T3_SM {TiltDetect} tiltState;
 
 // center: 0111, left: 0011, right: 1100, up: 0110, down: 1001
 void Task_Tilt()
@@ -187,38 +189,25 @@ void Task_Tilt()
 
   switch (tiltState)
   {
-    case NoShift: // center
+    case TiltDetect: 
       if (!b3 && !b2 && b1 && b0) // left
-      {
         tiltDirection = LEFT;
-        tiltState = ShiftLEFT;
-      }
+        
       else if (b3 && b2 && !b1 && !b0) // right
-      {
         tiltDirection = RIGHT;
-        tiltState = ShiftRIGHT;
-      }
+        
       else if (!b3 && b2 && b1 && !b0) // up
-      {
         tiltDirection = UP;
-        tiltState = ShiftUP;
-      }
-      else if (b3 && !b2 && !b1 && b0) // down
-      {
-        tiltDirection = DOWN;
-        tiltState = ShiftDOWN;
-      }
-      else 
-      {
-        tiltDirection = CENTER;
-        tiltState = NoShift;
-      }
-      break;
-    case ShiftDOWN:
 
+      else if (b3 && !b2 && !b1 && b0) // down
+        tiltDirection = DOWN;
+
+      else 
+        tiltDirection = CENTER;
       break;
+
     default:
-      tiltState = NoShift;
+      tiltState = TiltDetect;
   }
 }
 
@@ -242,7 +231,7 @@ void setup() {
   task2 = scheduler.insert(Task_LedMat, TASK_LEDMAT_PERIOD, false);
   scheduler.activate(task2);
 
-  tiltState = NoShift;
+  tiltState = TiltDetect;
   task2 = scheduler.insert(Task_Tilt, ONE_SEC/8, false);
   scheduler.activate(task3);
 }

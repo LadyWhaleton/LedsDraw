@@ -165,12 +165,15 @@ void getPatternBoundaries(const Pattern &p, char &top, char &bot, char &left, ch
   top = topMost; bot = botMost; left = leftMost; right = rightMost;
 }
 
+// Return value indicates if the pattern was edited
 // Takes in two parameters, the pattern to be modified and the shift direction
-void shiftPattern(Pattern& p, char shiftDir )
+bool shiftPattern(Pattern& p, char shiftDir )
 {
+  bool patternChanged = false; 
+  
   // first, check if the pattern is empty
   if ( p.isEmpty() )
-    return;
+    return patternChanged;
 
   // otherwise, get the boundaries of the pattern
   char top, bottom, left, right;
@@ -179,30 +182,39 @@ void shiftPattern(Pattern& p, char shiftDir )
   if (shiftDir == 0 && top != 0) // shift up
   {
     displayFlag("!");
+    patternChanged = true;
+    
     for (char i = 1; i < 8; ++i)
       p.row[i-1] = p.row[i];
+    p.row[7] = B00000000;
   }
 
   else if (shiftDir == 1 && bottom != 7) // shift down
   {
     displayFlag("!");
+    patternChanged = true;
     for (char i = 7; i >= 1; --i)
       p.row[i] = p.row[i-1];
+    p.row[0] = B00000000;
   }
 
-  else if (shiftDir == 0 && left != 0) // shift left
+  else if (shiftDir == 2 && left != 0) // shift left
   {
     displayFlag("!");
+    patternChanged = true;
     for (char i = 0; i < 8; i++)
       p.row[i] = p.row[i] << 1;
   }
 
-  else if (shiftDir == 7 && right != 7) // shift right
+  else if (shiftDir == 3 && right != 7) // shift right
   {
     displayFlag("!");
+    patternChanged = true;
     for (char i = 0; i < 8; i++)
       p.row[i] = p.row[i] >> 1;
   }
+
+  return patternChanged;
 }
 
 #endif
