@@ -2,12 +2,14 @@
 #define HELPER_H
 
 #include "patterns.h"
+#include "SPI.h"
 
 // ================ PIN MAPPING ========================
-#define MOSI_PIN 51 // LEDMAT DIN
 #define MISO_PIN 50 
-#define SCK_PIN 52 // LEDMAT CLK
-#define SS_LEDMAT 53 // LEDMAT CS
+#define LEDMAT0_CLK 42 // LEDMAT0 CLK, 52 (black)
+#define LEDMAT0_CS 43 // LEDMAT0 CS, 53 (white)
+#define LEDMAT0_DIN 44 // LEDMAT0 DIN, 51 (yellow)
+#define SS_ARDUINO 14 
 #define TILT_B0 46
 #define TILT_B1 47
 #define TILT_B2 48
@@ -15,7 +17,8 @@
 
 // ================ GLOBALS ========================
 #define ONE_SEC 1000000
-#define TASK_LEDMAT_PERIOD 100000
+#define TASK_MAIN_PERIOD 150000
+#define TASK_LEDMAT_PERIOD 50000
 #define TASK_KEYPAD_PERIOD 50000
 #define FRAME_TIME 200000
 #define CURSOR_TIME 100000
@@ -35,7 +38,7 @@ bool drawModeOn = false;
 
 // ================ LED MATRIX ========================
 // constructor parameters: dataPin, clkPin, csPin, numDevices)
-LedControl lc = LedControl(MOSI_PIN, SCK_PIN, SS_LEDMAT, 1);
+LedControl lc = LedControl(LEDMAT0_DIN, LEDMAT0_CLK, LEDMAT0_CS, 1);
 
 int frameIndex = 0;
 long frameTime = FRAME_TIME;

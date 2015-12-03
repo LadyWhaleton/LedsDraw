@@ -21,6 +21,7 @@ enum TiltDir {UP, DOWN, LEFT, RIGHT, CENTER} tiltDirection;
 void Task_Keypad()
 {
   key = GetKeypadKey();
+
 }
 
 // ================ TASK MAIN ===================================
@@ -28,6 +29,11 @@ enum T1_SM {MainInit, MainMenu, DrawModeAsk, DrawMode, SyncMode, Reset} mainStat
 void Task_Main()
 {
   static int menuOption;
+
+  char k = key;
+
+  if (k == 'D')
+    Serial1.print("hello1");
   
   switch (mainState)
   {
@@ -38,18 +44,18 @@ void Task_Main()
       break;
       
     case MainMenu:
-      if (menuOption != MIN_OPTION && key =='4') // menu left
+      if (menuOption != MIN_OPTION && k =='4') // menu left
       {
         menuOption--;
         displayMenuOption(menuOption);
       }
-      else if (menuOption != MAX_OPTION && key == '6') // menu right
+      else if (menuOption != MAX_OPTION && k == '6') // menu right
       {
         menuOption++;
         displayMenuOption(menuOption);
       }
       
-      else if (key == '5') // user selected something
+      else if (k == '5') // user selected something
       {
         if (menuOption == 1)
         {
@@ -65,9 +71,9 @@ void Task_Main()
       break;
 
     case DrawModeAsk:
-      if (key == 'A' || key == 'B' || key == 'C')
+      if (k == 'A' || k == 'B' || k == 'C')
       {
-        drawModeSetup(key);
+        drawModeSetup(k);
         displayDrawMode();
         mainState = DrawMode;
       }
@@ -85,13 +91,13 @@ void Task_Main()
       }
       
       // process key presses
-      if (key == 'A') // save
+      if (k == 'A') // save
       {
         Frames[frameIndex] = EditedPattern;
         displayClearFlag();
       }
    
-      else if (key == 'B') // done
+      else if (k == 'B') // done
       {
         // revert the pattern to it's original
         EditedPattern = Frames[frameIndex];
@@ -103,7 +109,7 @@ void Task_Main()
         mainState = MainMenu;
       }
 
-      else if (key == 'C') // clear
+      else if (k == 'C') // clear
       {
         // clear the pattern, clear led matrix, redisplay cursor
         EditedPattern.clearPattern();
@@ -113,17 +119,17 @@ void Task_Main()
         displayFlag("!");
       }
       
-      else if (key == '5') // draw or clear the point
+      else if (k == '5') // draw or clear the point
         plotPoint();
 
       // cursor movement
-      else if (key == '2' || key == '8' || key == '4' || key == '6')
-        moveCursor(key);
+      else if (k == '2' || k == '8' || k == '4' || k == '6')
+        moveCursor(k);
       
       break;
 
     case SyncMode:
-      if (key == 'B')
+      if (k == 'B')
       {
         displayDefaultMenu();
         mainState = MainMenu;
@@ -139,12 +145,13 @@ void Task_Main()
 enum T2_SM {Idle, Drawing, Playing, Syncing} ledState;
 void Task_LedMat()
 {
+  char k = key;
   
   // transitions
   switch (ledState)
   {
     case Idle:
-      if (key == '*' && !drawModeOn)
+      if (k == '*' && !drawModeOn)
       {
         frameIndex = 0;
         frameTime = FRAME_TIME;
@@ -152,7 +159,7 @@ void Task_LedMat()
       }
       break;
     case Playing:
-      if (key == '*')
+      if (k == '*')
         ledState = Idle;
       break;
     default:
@@ -220,14 +227,18 @@ void setup() {
   LedControl_init(); // init ledControl
   Pattern_init(); // init default patterns for LED matrix
   Keypad_init(); // Keypad on PortA
+
+  // set up SPI for slave
+  digitalWrite(SS_ARDUINO, OUTPUT);
   
   Serial.begin(115200);
+  Serial1.begin(115200);
 
   task0 = scheduler.insert(Task_Keypad, TASK_KEYPAD_PERIOD, false);
   scheduler.activate(task0);
   
   mainState = MainInit;
-  task1 = scheduler.insert(Task_Main, ONE_SEC/6, false);
+  task1 = scheduler.insert(Task_Main, TASK_MAIN_PERIOD, false);
   scheduler.activate(task1);
 
   ledState = Idle;
