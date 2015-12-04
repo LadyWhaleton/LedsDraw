@@ -4,18 +4,21 @@
 #include "patterns.h"
 #include "SPI.h"
 
-// ================ PIN MAPPING ========================
+// ===========================================================
+// PIN MAPPING
+// ===========================================================
 #define MISO_PIN 50 
 #define LEDMAT0_CLK 42 // LEDMAT0 CLK, 52 (black)
 #define LEDMAT0_CS 43 // LEDMAT0 CS, 53 (white)
 #define LEDMAT0_DIN 44 // LEDMAT0 DIN, 51 (yellow)
-#define SS_ARDUINO 14 
 #define TILT_B0 46
 #define TILT_B1 47
 #define TILT_B2 48
 #define TILT_B3 49
 
-// ================ GLOBALS ========================
+// ===========================================================
+// GLOBALS
+// ===========================================================
 #define ONE_SEC 1000000
 #define TASK_MAIN_PERIOD 150000
 #define TASK_LEDMAT_PERIOD 50000
@@ -33,10 +36,9 @@ enum colNum {MCOL1, MCOL2, MCOL3, MCOL4, MCOL5, MCOL6, MCOL7, MCOL8};
 char cursorCol;
 char cursorRow;
 
-// mode flags
-bool drawModeOn = false;
-
-// ================ LED MATRIX ========================
+// ===========================================================
+// LED MATRIX
+// ===========================================================
 // constructor parameters: dataPin, clkPin, csPin, numDevices)
 LedControl lc = LedControl(LEDMAT0_DIN, LEDMAT0_CLK, LEDMAT0_CS, 1);
 
@@ -84,7 +86,9 @@ void animateFrames()
 }
 
 // ================ TASK MAIN STUFF ========================
-// ================ DRAW MODE ASK ==========================
+// ===========================================================
+// DRAW MODE ASK
+// ===========================================================
 void drawModeSetup(char k)
 {
 	if (k == 'A') frameIndex = 0;
@@ -104,7 +108,9 @@ void drawModeSetup(char k)
 	drawModeOn = true;
 }
 
-// ================ DRAW MODE ==============================
+// ===========================================================
+// DRAW MODE
+// ===========================================================
 void blinkCursor()
 {
 	if (ledCursorOn)

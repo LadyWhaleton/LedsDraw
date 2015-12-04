@@ -1,29 +1,64 @@
+#include "slave.h"
+
 byte buf[8];
 String s;
 bool doneReading = false; 
 
-void setup() {
-  // put your setup code here, to run once:
-   Serial.begin(115200);
-   //Serial.println("starting.");
-   doneReading = false;
-}
+// ===========================================================
+// SCHEDULER
+// ===========================================================
+Agenda scheduler;
+int task0;
 
-void loop() {
-  // put your main code here, to run repeatedly:
-  SerialEvent();
-
+// ===========================================================
+// TASK MAIN
+// ===========================================================
+enum T1_SM {mainIdle} mainState;
+void Task_Main()
+{
   if (doneReading) // done
   {
     Serial.println(s);
     s = "";
     doneReading = false;
   }
+  
+  switch (mainState)
+  {
+    case mainIdle:
+    
+      break;
+    default:
+      mainState = mainIdle;
+  }
+}
 
+// ===========================================================
+// SETUP, LOOP, SERIAL EVENT
+// ===========================================================
+void setup() 
+{
+  LedControl_init();
+   
+  // put your setup code here, to run once:
+  Serial.begin(115200);
+
+  mainState = mainIdle;
+  task0 = scheduler.insert(Task_Main, TASK_MAIN_PERIOD, false);
+  scheduler.activate(task0);
+
+  doneReading = false;
+}
+
+void loop() 
+{
+  // put your main code here, to run repeatedly:
+  SerialEvent();
 }
 
 void SerialEvent() {
-  while (Serial.available()) {
+  while (Serial.available()) 
+  {
     // get the new byte:
     char inChar = (char)Serial.read();
     //Serial.println("got something!");

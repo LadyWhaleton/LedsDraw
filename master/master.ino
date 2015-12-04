@@ -6,25 +6,29 @@
 
 // ================ SHARED GLOBALS ACROSS TASKS ========================
 char key;
+bool drawModeOn = false;
+bool syncModeOn = false;
 
-// ================ SCHEDULER ========================
+// ===========================================================
+// SCHEDULER
+// ===========================================================
 Agenda scheduler;
 int task0, task1, task2, task3;
 
 // ================ TILT SENSOR ========================
 enum TiltDir {UP, DOWN, LEFT, RIGHT, CENTER} tiltDirection;
 
-// ******************* TASKS*******************************************
-// ********************************************************************
-
-// ================ TASK LED MATRIX ========================
+// ===========================================================
+// TASK KEYPAD
+// ===========================================================
 void Task_Keypad()
 {
   key = GetKeypadKey();
-
 }
 
-// ================ TASK MAIN ===================================
+// ===========================================================
+// TASK MAIN
+// ===========================================================
 enum T1_SM {MainInit, MainMenu, DrawModeAsk, DrawMode, SyncMode, Reset} mainState;
 void Task_Main()
 {
@@ -32,8 +36,10 @@ void Task_Main()
 
   char k = key;
 
+  /*
   if (k == 'D')
     Serial1.print("hello1");
+  */
   
   switch (mainState)
   {
@@ -134,6 +140,12 @@ void Task_Main()
         displayDefaultMenu();
         mainState = MainMenu;
       }
+
+      if (k == '*')
+      {
+        Serial1.print
+      }
+      
       break;
       
     default:
@@ -141,7 +153,9 @@ void Task_Main()
   }
 }
 
-// ================ TASK LED MATRIX ========================
+// ===========================================================
+// TASK LED MATRIX 
+// ===========================================================
 enum T2_SM {Idle, Drawing, Playing, Syncing} ledState;
 void Task_LedMat()
 {
@@ -179,7 +193,10 @@ void Task_LedMat()
       ledState = Idle;
   }
 }
-// ================ TASK TILT ========================
+
+// ===========================================================
+// TASK TILT
+// ===========================================================
 enum T3_SM {TiltDetect} tiltState;
 
 // center: 0111, left: 0011, right: 1100, up: 0110, down: 1001
@@ -221,15 +238,15 @@ void Task_Tilt()
   }
 }
 
+// ===========================================================
+// SETUP AND LOOP
+// ===========================================================
 void setup() {
   // put your setup code here, to run once:
   LCD_init(); // LCD data lines on PORTL
   LedControl_init(); // init ledControl
   Pattern_init(); // init default patterns for LED matrix
   Keypad_init(); // Keypad on PortA
-
-  // set up SPI for slave
-  digitalWrite(SS_ARDUINO, OUTPUT);
   
   Serial.begin(115200);
   Serial1.begin(115200);
