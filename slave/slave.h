@@ -23,7 +23,10 @@
 #define FRAME_TIME 200000
 
 long frameTime = FRAME_TIME;
-int frameIndex = 0;
+char frameIndex = 0;
+
+// order flags
+bool syncMode = false;
 
 // ===========================================================
 // LED MATRIX
@@ -46,12 +49,12 @@ void displayPattern(const Pattern& p)
     lc.setRow(LEDMAT_ADDR, i, p.row[i]);
 }
 
-void animateFrames()
+void animateFrames(const Pattern* F)
 {
   // if frameTime > 0, stay on same frame. Decrement frameTime
   if (frameTime > 0) 
   {
-    displayPattern(Frames[frameIndex]);
+    displayPattern(F[frameIndex]);
     frameTime -= TASK_LEDMAT_PERIOD;
   }
 
@@ -66,6 +69,16 @@ void animateFrames()
     else
       frameIndex = 0;
   }   
+}
+
+// parameter is the index to the LoadedFrames
+void loadPattern(char index)
+{
+  for (char i = 0; i < 8; ++i)
+    if (Serial.available())
+      LoadedPattern.row[i] = Serial.read();
+
+  LoadedFrames[index] = LoadedPattern;
 }
 
 #endif

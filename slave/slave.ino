@@ -1,8 +1,9 @@
 #include "slave.h"
 
 byte buf[8];
-String s;
-bool doneReading = false; 
+char c;
+bool gotOrder = false; bool orderDone = false; 
+bool doneLoading = false;
 
 // ===========================================================
 // SCHEDULER
@@ -13,23 +14,27 @@ int task0;
 // ===========================================================
 // TASK MAIN
 // ===========================================================
-enum T1_SM {mainIdle} mainState;
+enum T0_SM {Idle, Sync} mainState;
 void Task_Main()
 {
-  if (doneReading) // done
-  {
-    Serial.println(s);
-    s = "";
-    doneReading = false;
-  }
-  
   switch (mainState)
   {
-    case mainIdle:
-    
+    case Idle:
+      if (syncMode)
+      {
+        frameIndex = 0;
+        mainState = Sync;
+      }
+ 
+      break;
+    case Sync:
+      if (doneLoading)
+      {
+        
+      }
       break;
     default:
-      mainState = mainIdle;
+      mainState = Idle;
   }
 }
 
@@ -43,31 +48,57 @@ void setup()
   // put your setup code here, to run once:
   Serial.begin(115200);
 
-  mainState = mainIdle;
+  mainState = Idle;
   task0 = scheduler.insert(Task_Main, TASK_MAIN_PERIOD, false);
   scheduler.activate(task0);
 
-  doneReading = false;
+  gotOrder = false; orderDone = true;
+  doneLoading = false;
 }
 
 void loop() 
 {
   // put your main code here, to run repeatedly:
   SerialEvent();
+  setOrder();
+  scheduler.update();
 }
 
 void SerialEvent() {
   while (Serial.available()) 
   {
-    // get the new byte:
-    char inChar = (char)Serial.read();
-    //Serial.println("got something!");
-    
-    // if the incoming character is a newline, set a flag
-    // so the main loop can do something about it:
-    if (inChar == '1')
-      doneReading = true;
-    else 
-      s += inChar;
+    // we get another command here if we don't have an order
+    // and if we were done with previous order
+    if (!gotOrder && orderDone)
+    {
+      char inChar = (char)Serial.read();
+      
+      // if the incoming character is a period, set a flag
+      // so the main loop can do something about it:
+      if (inChar == '&')
+        gotOrder = true;
+      else 
+        c = inChar;
+    }
+  }
+}
+
+// ===========================================================
+// set the order
+// ===========================================================
+void setOrder()
+{
+  if (gotOrder && orderDone)
+  {
+    Serial.println(c);
+
+    if (c == '1')
+    {
+      for (char i = 0; i < 3; ++i)
+        loadPattern(i);
+      syncMode == true;
+      doneLoading = true;
+      orderDone = false;
+    }
   }
 }
