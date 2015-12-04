@@ -1,13 +1,8 @@
-#include <LedControlMS.h>
-#include "Agenda.h"
-#include "keypad.h"
-#include "helper.h"
+#include "master.h"
 #include <avr/io.h>
 
 // ================ SHARED GLOBALS ACROSS TASKS ========================
 char key;
-bool drawModeOn = false;
-bool syncModeOn = false;
 
 // ===========================================================
 // SCHEDULER
@@ -143,7 +138,7 @@ void Task_Main()
 
       if (k == '*')
       {
-        Serial1.print
+        //Serial1.print
       }
       
       break;

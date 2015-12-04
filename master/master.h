@@ -1,6 +1,9 @@
 #ifndef HELPER_H
 #define HELPER_H
 
+#include <LedControlMS.h>
+#include "Agenda.h"
+#include "keypad.h"
 #include "patterns.h"
 #include "SPI.h"
 
@@ -28,6 +31,9 @@
 #define MIN_OPTION 1
 #define MAX_OPTION 4
 #define LEDMAT_ADDR 0
+
+bool drawModeOn = false;
+bool syncModeOn = false;
 
 enum rowNum {MROW1, MROW2, MROW3, MROW4, MROW5, MROW6, MROW7, MROW8};
 enum colNum {MCOL1, MCOL2, MCOL3, MCOL4, MCOL5, MCOL6, MCOL7, MCOL8};
