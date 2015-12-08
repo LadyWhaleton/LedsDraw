@@ -25,8 +25,12 @@
 long frameTime = FRAME_TIME;
 char frameIndex = 0;
 
-// order flags
-bool syncMode = false;
+// sync mode flags
+bool patternLoaded = false;
+bool syncMode, syncPlay = false;
+
+// generic mode flags
+bool awaitingOrder = true;
 
 // ===========================================================
 // LED MATRIX
@@ -49,12 +53,12 @@ void displayPattern(const Pattern& p)
     lc.setRow(LEDMAT_ADDR, i, p.row[i]);
 }
 
-void animateFrames(const Pattern* F)
+void animateFrames()
 {
   // if frameTime > 0, stay on same frame. Decrement frameTime
   if (frameTime > 0) 
   {
-    displayPattern(F[frameIndex]);
+    displayPattern(LoadedFrames[frameIndex]);
     frameTime -= TASK_LEDMAT_PERIOD;
   }
 
@@ -71,14 +75,12 @@ void animateFrames(const Pattern* F)
   }   
 }
 
-// parameter is the index to the LoadedFrames
-void loadPattern(char index)
+void resetFlags()
 {
-  for (char i = 0; i < 8; ++i)
-    if (Serial.available())
-      LoadedPattern.row[i] = Serial.read();
-
-  LoadedFrames[index] = LoadedPattern;
+  syncMode = false;
+  syncPlay = false;
+  awaitingOrder = true;
+  patternLoaded = false;
 }
 
 #endif

@@ -58,13 +58,25 @@ void Task_Main()
       
       else if (k == '5') // user selected something
       {
-        if (menuOption == 1)
+        if (menuOption == 1) // Draw mode
         {
           displayDrawModeAsk();
           mainState = DrawModeAsk;
         }
-        else if (menuOption == 2)
+        else if (menuOption == 2) // Sync mode
         {
+          // send the pattern
+          Serial1.print("2&");
+          
+          for (char i = 0; i < numFrames; ++i)
+          {
+            for (char j = 0; j < 8; ++j)
+              Serial1.print(Frames[i].row[j]);
+
+            Serial1.print('&'); // send this to indicate next frame 
+          }
+          Serial1.print('D');
+                    
           displaySyncMode();
           mainState = SyncMode;
         }
@@ -98,7 +110,7 @@ void Task_Main()
         displayClearFlag();
       }
    
-      else if (k == 'B') // done
+      else if (k == 'D') // done
       {
         // revert the pattern to it's original
         EditedPattern = Frames[frameIndex];
@@ -130,16 +142,15 @@ void Task_Main()
       break;
 
     case SyncMode:
-      if (k == 'B')
+      if (k == 'D')
       {
+        Serial1.print('D');
         displayDefaultMenu();
         mainState = MainMenu;
       }
 
-      if (k == '*')
-      {
-        //Serial1.print
-      }
+      else if (k == '*')
+        Serial1.print('*');
       
       break;
       
@@ -162,7 +173,7 @@ void Task_LedMat()
     case Idle:
       if (k == '*' && !drawModeOn)
       {
-        frameIndex = 0;
+        // frameIndex = 0;
         frameTime = FRAME_TIME;
         ledState = Playing;
       }
@@ -173,6 +184,7 @@ void Task_LedMat()
       break;
     default:
       ledState = Idle;
+      frameIndex = 0;
   }
 
   // actions

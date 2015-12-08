@@ -5,7 +5,6 @@
 #include "Agenda.h"
 #include "keypad.h"
 #include "patterns.h"
-#include "SPI.h"
 
 // ===========================================================
 // PIN MAPPING

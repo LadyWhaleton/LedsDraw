@@ -1,7 +1,7 @@
-// This is the slave edition of pattern.h
-
 #ifndef PATTERNS_H
 #define PATTERNS_H
+
+#include "lcd_messages.h"
 
 #define numFrames 3
 
@@ -47,9 +47,6 @@ Pattern DefaultFrames[numFrames];
 Pattern Frames[numFrames];
 Pattern EditedPattern;
 
-Pattern LoadedPattern;
-Pattern LoadedFrames[numFrames];
-
 void Pattern_init()
 {
   // pattern for the first frame;
@@ -88,11 +85,6 @@ void Pattern_init()
   DefaultFrames[0] = f1;
   DefaultFrames[1] = f2;
   DefaultFrames[2] = f3;
-
-  /*
-  LoadedFrames[0] = f1;
-  LoadedFrames[1] = f2;
-  LoadedFrames[2] = f3; */
 
   Frames[0] = f1;
   Frames[1] = f2;
