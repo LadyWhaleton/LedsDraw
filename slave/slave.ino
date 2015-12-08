@@ -1,6 +1,6 @@
 #include "slave.h"
 
-char buf;
+byte buf;
 char c, findex, pindex;
 
 // ===========================================================
@@ -43,45 +43,25 @@ void Task_Main()
 // ===========================================================
 // TASK LED MATRIX 
 // ===========================================================
-enum T1_SM {Stop, Drawing, Playing} ledState;
+enum T1_SM {Wait, Drawing, Playing} ledState;
 void Task_LedMat()
 {
   
   // transitions
   switch (ledState)
   {
-    case Stop:
-      digitalWrite(6, HIGH);
+    case Wait:
       if (patternLoaded && syncPlay)
-      {
-        frameTime = FRAME_TIME;
-        ledState = Playing;
-      }
-      break;
-    case Playing:
-      digitalWrite(6, LOW);
+        animateFrames();
 
-      if (!syncPlay)
-        ledState = Stop;
+      else if (!syncPlay)
+        frameTime = FRAME_TIME;
+      
       break;
+      
     default:
       frameIndex = 0;
-      ledState = Stop;
-      
-  }
-
-  // actions
-  switch (ledState)
-  {
-    case Stop:
-      // do nothing
-      break;
-    case Playing:
-      animateFrames();
-      // lc.setRow(LEDMAT_ADDR, 3, B00001111);
-      break;
-    default:
-      ledState = Stop;
+      ledState = Wait;  
   }
 }
 
@@ -95,7 +75,7 @@ void setup()
   resetFlags();
 
   pinMode(6, OUTPUT);
-   
+  
   // put your setup code here, to run once:
   Serial.begin(115200);
 
@@ -103,7 +83,7 @@ void setup()
   task0 = scheduler.insert(Task_Main, TASK_MAIN_PERIOD, false);
   scheduler.activate(task0);
 
-  ledState = Stop;
+  ledState = Wait;
   task1 = scheduler.insert(Task_LedMat, TASK_LEDMAT_PERIOD, false);
   scheduler.activate(task1);
 
@@ -117,6 +97,7 @@ void loop()
 }
 
 void SerialEvent() {
+  
   while (Serial.available()) 
   {
     // we get another command here if we don't have an order
@@ -128,7 +109,7 @@ void SerialEvent() {
       // if the incoming character is a '&', set a flag
       if (inChar == '&')
       {
-        Serial.println(c);
+        patternLoaded = false;
         pindex = 0; findex = 0; awaitingOrder = false;
       }
 
@@ -149,13 +130,15 @@ void SerialEvent() {
   } // end of while loop
 }
 
+// problem was that I was sending the value as a char/string?
 void syncSetup()
-{
-  buf = (char) Serial.read();
+{ 
+  digitalWrite(6, HIGH);
+  buf = Serial.read();
+  LoadedFrames[findex].row[pindex] = buf; pindex++;
 
-  if (buf == 'D') { patternLoaded = true; syncMode = true; syncPlay = false; Serial.println("setup done"); }
-  else if (buf == '&') { findex++; pindex = 0; }
-  else { LoadedFrames[findex].row[pindex] = (byte) buf; pindex++; }
+  if (pindex == 8) { findex++; pindex = 0; }
+  if (findex == 3) { patternLoaded = true; syncMode = true; syncPlay = false; }
           
 }
 

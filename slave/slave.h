@@ -43,6 +43,8 @@ void LedControl_init()
   lc.shutdown(LEDMAT_ADDR, false);
   lc.setIntensity(LEDMAT_ADDR, 3);
   lc.clearDisplay(LEDMAT_ADDR);
+
+  lc.setRow(LEDMAT_ADDR, 0, B1111000);
 }
 
 void displayPattern(const Pattern& p)

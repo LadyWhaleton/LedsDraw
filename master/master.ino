@@ -14,14 +14,6 @@ int task0, task1, task2, task3;
 enum TiltDir {UP, DOWN, LEFT, RIGHT, CENTER} tiltDirection;
 
 // ===========================================================
-// TASK KEYPAD
-// ===========================================================
-void Task_Keypad()
-{
-  key = GetKeypadKey();
-}
-
-// ===========================================================
 // TASK MAIN
 // ===========================================================
 enum T1_SM {MainInit, MainMenu, DrawModeAsk, DrawMode, SyncMode, Reset} mainState;
@@ -29,12 +21,7 @@ void Task_Main()
 {
   static int menuOption;
 
-  char k = key;
-
-  /*
-  if (k == 'D')
-    Serial1.print("hello1");
-  */
+  char k = GetKeypadKey();
   
   switch (mainState)
   {
@@ -65,22 +52,21 @@ void Task_Main()
         }
         else if (menuOption == 2) // Sync mode
         {
-          // send the pattern
           Serial1.print("2&");
-          
-          for (char i = 0; i < numFrames; ++i)
-          {
-            for (char j = 0; j < 8; ++j)
-              Serial1.print(Frames[i].row[j]);
 
-            Serial1.print('&'); // send this to indicate next frame 
-          }
-          Serial1.print('D');
-                    
+          // send the frames
+          for (char i = 0; i < numFrames; ++i)
+            for (char j = 0; j < 8; ++j)
+              Serial1.write(Frames[i].row[j]);  
+              
           displaySyncMode();
           mainState = SyncMode;
         }
       }
+
+      if (k == '*' && !playAnim){ frameTime = FRAME_TIME; playAnim = true; }
+      else if (k == '*' && playAnim) playAnim = false;
+      
       break;
 
     case DrawModeAsk:
@@ -89,6 +75,12 @@ void Task_Main()
         drawModeSetup(k);
         displayDrawMode();
         mainState = DrawMode;
+      }
+
+      else if (k == 'D')
+      {
+        displayDefaultMenu();
+        mainState = MainMenu;
       }
       break;
 
@@ -145,12 +137,18 @@ void Task_Main()
       if (k == 'D')
       {
         Serial1.print('D');
+        playAnim = false;
         displayDefaultMenu();
+        menuOption = 1;
         mainState = MainMenu;
       }
 
       else if (k == '*')
+      {
+        if (!playAnim){ frameTime = FRAME_TIME; playAnim = true; }
+        else if (playAnim) playAnim = false;
         Serial1.print('*');
+      }
       
       break;
       
@@ -162,42 +160,21 @@ void Task_Main()
 // ===========================================================
 // TASK LED MATRIX 
 // ===========================================================
-enum T2_SM {Idle, Drawing, Playing, Syncing} ledState;
+enum T2_SM {Wait, Drawing, Playing, Syncing} ledState;
 void Task_LedMat()
 {
-  char k = key;
-  
   // transitions
   switch (ledState)
   {
-    case Idle:
-      if (k == '*' && !drawModeOn)
-      {
-        // frameIndex = 0;
-        frameTime = FRAME_TIME;
-        ledState = Playing;
-      }
-      break;
-    case Playing:
-      if (k == '*')
-        ledState = Idle;
-      break;
-    default:
-      ledState = Idle;
-      frameIndex = 0;
-  }
+    case Wait:
+      if (playAnim && !drawModeOn)
+        animateFrames();
 
-  // actions
-  switch (ledState)
-  {
-    case Idle:
-      // do nothing
       break;
-    case Playing:
-      animateFrames();
-      break;
+
     default:
-      ledState = Idle;
+      ledState = Wait;
+      frameIndex = 0;
   }
 }
 
@@ -257,15 +234,12 @@ void setup() {
   
   Serial.begin(115200);
   Serial1.begin(115200);
-
-  task0 = scheduler.insert(Task_Keypad, TASK_KEYPAD_PERIOD, false);
-  scheduler.activate(task0);
   
   mainState = MainInit;
   task1 = scheduler.insert(Task_Main, TASK_MAIN_PERIOD, false);
   scheduler.activate(task1);
 
-  ledState = Idle;
+  ledState = Wait;
   task2 = scheduler.insert(Task_LedMat, TASK_LEDMAT_PERIOD, false);
   scheduler.activate(task2);
 
@@ -278,3 +252,4 @@ void loop() {
   // put your main code here, to run repeatedly:
   scheduler.update();
 }
+

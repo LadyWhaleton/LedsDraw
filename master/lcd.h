@@ -143,7 +143,6 @@ void LCD_DisplayString( unsigned char column, const char* s) {
 	while (*s)
 	{
 		LCD_Cursor(c++);
-		Serial.print(*s);
 		LCD_WriteData(*s++);	
 	}
 }

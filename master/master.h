@@ -31,6 +31,7 @@
 #define MAX_OPTION 4
 #define LEDMAT_ADDR 0
 
+bool playAnim = false;
 bool drawModeOn = false;
 bool syncModeOn = false;
 
