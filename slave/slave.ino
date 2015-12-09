@@ -10,24 +10,26 @@ Agenda scheduler;
 int task0, task1;
 
 // ===========================================================
-// TASK MAIN
+// TASK MAIN: handles inputs / master commands
 // ===========================================================
-enum T0_SM {Init, Idle, Sync} mainState;
+enum T0_SM {Init, Idle, Sync, Play} mainState;
 void Task_Main()
 {
+  bool playButton = (bool) (~digitalRead(PLAY_BUTTON));
+  
   switch (mainState)
   {
     case Init:
-      findex = 0; pindex = 0;
       mainState = Idle;
       break;
     case Idle:
-      if (syncMode)
-      {
-        //frameIndex = 0;
-        mainState = Sync;
-      }
- 
+      if (syncMode) { mainState = Sync; }
+      else if (!syncMode && playButton && patternLoaded) { mainState = Play; playAnim = true; }
+      break;
+
+   case Play:
+      if (playButton) { mainState = Idle; playAnim = false; }
+      else if (syncMode) { mainState = Sync; playAnim = false; }
       break;
       
     case Sync:
@@ -43,25 +45,51 @@ void Task_Main()
 // ===========================================================
 // TASK LED MATRIX 
 // ===========================================================
-enum T1_SM {Wait, Drawing, Playing} ledState;
+enum T1_SM {Wait, Drawing, Playing, Syncing} ledState;
 void Task_LedMat()
 {
-  
   // transitions
   switch (ledState)
   {
     case Wait:
-      if (patternLoaded && syncPlay)
-        animateFrames();
+      if (syncMode) ledState = Syncing;
+      else if (patternLoaded && syncMode) ledState = Syncing;
+      else if (patternLoaded && playAnim) { ledState = Playing; frameTime = FRAME_TIME; }
+      break;
 
-      else if (!syncPlay)
-        frameTime = FRAME_TIME;
+    case Playing:
+      if (!playAnim && !syncMode) ledState = Wait;
+      else if (syncMode) ledState = Syncing;
+      break;
+
+    case Syncing:
+      if (!syncMode) ledState = Wait;
+      break;
       
+    default:
+      ledState = Wait;  
+  }
+
+  // actions
+  switch (ledState)
+  {
+    case Wait:
+      // do nothing
+      break;
+      
+    case Playing:
+      animateFrames('0');
+      break;
+      
+    case Syncing:
+      if (syncPlay && playReg) animateFrames('0');
+      else if (syncPlay && playFlippedV) animateFrames('1');
+      else if (syncPlay && playFlippedH) animateFrames('2');
+      else if (!syncPlay) frameTime = FRAME_TIME;
       break;
       
     default:
       frameIndex = 0;
-      ledState = Wait;  
   }
 }
 
@@ -71,10 +99,10 @@ void Task_LedMat()
 void setup() 
 {
   LedControl_init();
-  Pattern_init();
   resetFlags();
 
-  pinMode(6, OUTPUT);
+  pinMode(5, OUTPUT);
+  pinMode(PLAY_BUTTON, INPUT);
   
   // put your setup code here, to run once:
   Serial.begin(115200);
@@ -105,16 +133,15 @@ void SerialEvent() {
     if (awaitingOrder)
     {
       char inChar = (char)Serial.read();
+      //Serial.print(inChar);
       
       // if the incoming character is a '&', set a flag
-      if (inChar == '&')
+      if (inChar == '2')
       {
-        patternLoaded = false;
+        patternLoaded = false; orientationSet = false;
         pindex = 0; findex = 0; awaitingOrder = false;
-      }
-
-      else 
         c = inChar;
+      }
     }
 
     // already got a command
@@ -123,7 +150,8 @@ void SerialEvent() {
       if (c == '2') // sync mode
       {
         if (!patternLoaded) syncSetup();
-        else syncPoller();
+        else if (patternLoaded && !orientationSet) getOrientation(); 
+        else if (patternLoaded && orientationSet) syncPoller();
       }
       
     }
@@ -137,17 +165,39 @@ void syncSetup()
   LoadedFrames[findex].row[pindex] = buf; pindex++;
 
   if (pindex == 8) { findex++; pindex = 0; }
-  if (findex == 3) { patternLoaded = true; syncMode = true; syncPlay = false; }
-          
+  if (findex == 3) 
+  { 
+    flipFrames(0); flipFrames(1); 
+    patternLoaded = true; syncPlay = false;
+  }
+}
+
+void getOrientation()
+{
+  // digitalWrite(5, HIGH);
+  char inChar = (char) Serial.read();
+
+  if (inChar == 'V') { playReg = false; playFlippedV = true; playFlippedH = false; }
+  else if (inChar == 'H') { playReg = false; playFlippedV = false; playFlippedH = true; }
+  else { playReg = true; playFlippedV = false; playFlippedH = false; }
+
+  orientationSet = true;
+  syncMode = true;
+  
 }
 
 void syncPoller()
 {
+  digitalWrite(5, HIGH);
   char inChar = (char) Serial.read();
-  Serial.print(inChar);
 
   if (inChar == '*' && syncPlay) syncPlay = false;
   else if (inChar == '*' && !syncPlay) syncPlay = true;
-  else if (inChar == 'D'){ syncMode = false; syncPlay = false; awaitingOrder = true; c = '0';}
+  else if (inChar == 'D')
+  { 
+    orientationSet = false;
+    syncMode = false; syncPlay = false; awaitingOrder = true; 
+    c = '0'; digitalWrite(5, LOW); 
+  }
 }
 

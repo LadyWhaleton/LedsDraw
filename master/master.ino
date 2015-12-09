@@ -10,11 +10,8 @@ char key;
 Agenda scheduler;
 int task0, task1, task2, task3;
 
-// ================ TILT SENSOR ========================
-enum TiltDir {UP, DOWN, LEFT, RIGHT, CENTER} tiltDirection;
-
 // ===========================================================
-// TASK MAIN
+// TASK MAIN: handles inputs, sends commands to slave
 // ===========================================================
 enum T1_SM {MainInit, MainMenu, DrawModeAsk, DrawMode, SyncMode, Reset} mainState;
 void Task_Main()
@@ -52,20 +49,22 @@ void Task_Main()
         }
         else if (menuOption == 2) // Sync mode
         {
-          Serial1.print("2&");
+          Serial1.print("2");
 
           // send the frames
           for (char i = 0; i < numFrames; ++i)
             for (char j = 0; j < 8; ++j)
               Serial1.write(Frames[i].row[j]);  
-              
+
           displaySyncMode();
+          syncModeOn = true;
           mainState = SyncMode;
         }
       }
 
-      if (k == '*' && !playAnim){ frameTime = FRAME_TIME; playAnim = true; }
-      else if (k == '*' && playAnim) playAnim = false;
+      if (k == '*' && !playAnim && mainState != DrawModeAsk){ frameTime = FRAME_TIME; playAnim = true; }
+      else if (k == '*' && playAnim || mainState == DrawModeAsk) playAnim = false;
+      else if (playAnim && mainState == SyncMode) playAnim = false;
       
       break;
 
@@ -104,10 +103,21 @@ void Task_Main()
         mainState = MainMenu;
       }
 
+      else if (k == 'B') // invert pattern
+      {
+        // invert pattern, display inverted pattern, redisplay cursor
+        EditedPattern.invertPattern();
+        displayPattern(EditedPattern);
+        lc.setLed(LEDMAT_ADDR, cursorRow, cursorCol, true);
+
+        displayFlag("!");
+      }
+
       else if (k == 'C') // clear
       {
-        // clear the pattern, clear led matrix, redisplay cursor
-        EditedPattern.clearPattern();
+        // clear/fill the pattern, clear/fill led matrix, redisplay cursor
+        if (EditedPattern.isEmpty()) EditedPattern.fillPattern();
+        else EditedPattern.clearPattern();
         displayPattern(EditedPattern);
         lc.setLed(LEDMAT_ADDR, cursorRow, cursorCol, true);
 
@@ -124,12 +134,17 @@ void Task_Main()
       break;
 
     case SyncMode:
+      if (flipHorizEnable && !flipVertEnable) Serial1.print('H');
+      else if (flipVertEnable && !flipHorizEnable) Serial1.print('V');
+      else Serial1.print('R');
+    
       if (k == 'D')
       {
         Serial1.print('D');
         playAnim = false;
-        displayDefaultMenu();
+        syncModeOn = false;
         menuOption = 1;
+        displayDefaultMenu();
         mainState = MainMenu;
       }
 
@@ -157,35 +172,48 @@ void Task_LedMat()
   switch (ledState)
   {
     case Wait:
-      if (playAnim && !drawModeOn) ledState = Playing;
+      if (playAnim && !drawModeOn && !syncModeOn) { ledState = Playing; frameTime = FRAME_TIME; }
+      else if (syncModeOn) { ledState = Syncing; frameTime = FRAME_TIME; frameIndex = 0; }
       else if (drawModeOn) ledState = Drawing;
-
       break;
 
     case Drawing:
       if (!drawModeOn) ledState = Wait;
-
-      else // still in drawing mode
-      {
-        // blink the cursor
-        blinkCursor();
-  
-        // if pattern has been shifted, redisplay the pattern
-        if ( shiftPattern(EditedPattern, tiltDirection) )
-        {
-          displayFlag("!");
-          displayPattern(EditedPattern);
-        }
-      }
       break;
 
     case Playing:
-      if (!playAnim) ledState = Wait;
-      else animateFrames();
+      if (!playAnim && !syncModeOn) ledState = Wait;
+      else if (syncModeOn) { ledState = Syncing; frameTime = FRAME_TIME; frameIndex = 0; }
+      break;
+
+    case Syncing:
+      if (!syncModeOn) { ledState = Wait; }
       break;
       
     default:
       ledState = Wait;
+  }
+
+  // actions
+  switch (ledState)
+  {
+    case Wait:
+      // do nothing
+      break;
+
+    case Drawing:
+      blinkCursor();
+      break;
+      
+    case Playing:
+      animateFrames();
+      break;
+
+    case Syncing:
+      if (playAnim) animateFrames();
+      break;
+      
+    default:
       frameIndex = 0;
   }
 }
@@ -193,9 +221,9 @@ void Task_LedMat()
 // ===========================================================
 // TASK TILT
 // ===========================================================
-enum T3_SM {TiltDetect} tiltState;
+enum T3_SM {TiltWait, TiltDetect, TiltLeft, TiltRight, TiltUp, TiltDown} tiltState;
 
-// center: 0111, left: 0011, right: 1100, up: 0110, down: 1001
+// center: 0100, left: 0011, right: 1100, up: 0110, down: 1001
 void Task_Tilt()
 {
   /*
@@ -205,30 +233,98 @@ void Task_Tilt()
   Serial.println(digitalRead(TILT_B0), DEC);
   */
   
-  char b0 = digitalRead(TILT_B0);
-  char b1 = digitalRead(TILT_B1);
-  char b2 = digitalRead(TILT_B2);
-  char b3 = digitalRead(TILT_B3);
+  bool b0 = (bool) digitalRead(TILT_B0);
+  bool b1 = (bool) digitalRead(TILT_B1);
+  bool b2 = (bool) digitalRead(TILT_B2);
+  bool b3 = (bool) digitalRead(TILT_B3);
 
   switch (tiltState)
   {
+    case TiltWait:
+      if (drawModeOn) { tiltState = TiltDetect, tiltDirection = CENTER; }; 
+      break;
+      
     case TiltDetect: 
-      if (!b3 && !b2 && b1 && b0) // left
-        tiltDirection = LEFT;
+      if (!drawModeOn) { tiltState = TiltWait; return; }
         
-      else if (b3 && b2 && !b1 && !b0) // right
-        tiltDirection = RIGHT;
-        
-      else if (!b3 && b2 && b1 && !b0) // up
-        tiltDirection = UP;
+      if (!b3 && !b2 && b1 && b0) { tiltState = TiltLeft; tiltDirection = LEFT; }
+      else if (b3 && b2 && !b1 && !b0) { tiltState = TiltRight; tiltDirection = RIGHT; } 
+      else if (!b3 && b2 && b1 && !b0) { tiltState = TiltUp; tiltDirection = UP; }
+      else if (b3 && !b2 && !b1 && b0) { tiltState = TiltDown; tiltDirection = DOWN; }
+      else tiltDirection = CENTER;
 
-      else if (b3 && !b2 && !b1 && b0) // down
-        tiltDirection = DOWN;
+      // if pattern has been shifted, redisplay the pattern
+      if ( drawModeOn && shiftPattern(EditedPattern, tiltDirection) )
+      {
+        displayFlag("!");
+        displayPattern(EditedPattern);
+      }
+      break;
+      
+    case TiltLeft:
+      if (!drawModeOn) { tiltState = TiltWait; return; }
+      
+      if (!b3 && !b2 && b1 && b0) { tiltDirection = CENTER; }
+      else if (b3 && b2 && !b1 && !b0) { tiltState = TiltRight; tiltDirection = RIGHT; } 
+      else if (!b3 && b2 && b1 && !b0) { tiltState = TiltUp; tiltDirection = UP; }
+      else if (b3 && !b2 && !b1 && b0) { tiltState = TiltDown; tiltDirection = DOWN; }
+      else { tiltState = TiltDetect; tiltDirection = CENTER; }
 
-      else 
-        tiltDirection = CENTER;
+      if ( drawModeOn && shiftPattern(EditedPattern, tiltDirection) )
+      {
+        displayFlag("!");
+        displayPattern(EditedPattern);
+      }
       break;
 
+    case TiltRight:
+      if (!drawModeOn) { tiltState = TiltWait; return; }
+      
+      if (!b3 && !b2 && b1 && b0) { tiltState = TiltLeft; tiltDirection = LEFT; }
+      else if (b3 && b2 && !b1 && !b0) { tiltDirection = CENTER; } 
+      else if (!b3 && b2 && b1 && !b0) { tiltState = TiltUp; tiltDirection = UP; }
+      else if (b3 && !b2 && !b1 && b0) { tiltState = TiltDown; tiltDirection = DOWN; }
+      else { tiltState = TiltDetect; tiltDirection = CENTER; }
+
+      if ( drawModeOn && shiftPattern(EditedPattern, tiltDirection) )
+      {
+        displayFlag("!");
+        displayPattern(EditedPattern);
+      }
+      break;
+
+    case TiltUp:
+      if (!drawModeOn) { tiltState = TiltWait; return; }
+      
+      if (!b3 && !b2 && b1 && b0) { tiltState = TiltLeft; tiltDirection = LEFT; }
+      else if (b3 && b2 && !b1 && !b0) { tiltState = TiltRight; tiltDirection = RIGHT; } 
+      else if (!b3 && b2 && b1 && !b0) { tiltDirection = CENTER; }
+      else if (b3 && !b2 && !b1 && b0) { tiltState = TiltDown; tiltDirection = DOWN; }
+      else { tiltState = TiltDetect; tiltDirection = CENTER; }
+
+      if ( drawModeOn && shiftPattern(EditedPattern, tiltDirection) )
+      {
+        displayFlag("!");
+        displayPattern(EditedPattern);
+      }
+      break;
+      
+    case TiltDown:
+      if (!drawModeOn) { tiltState = TiltWait; return; }
+      
+      if (!b3 && !b2 && b1 && b0) { tiltState = TiltLeft; tiltDirection = LEFT; }
+      else if (b3 && b2 && !b1 && !b0) { tiltState = TiltRight; tiltDirection = RIGHT; } 
+      else if (!b3 && b2 && b1 && !b0) { tiltState = TiltUp; tiltDirection = UP; }
+      else if (b3 && !b2 && !b1 && b0) { tiltDirection = CENTER; }
+      else { tiltState = TiltDetect; tiltDirection = CENTER; }
+
+      if ( drawModeOn && shiftPattern(EditedPattern, tiltDirection) )
+      {
+        displayFlag("!");
+        displayPattern(EditedPattern);
+      }
+      break;
+      
     default:
       tiltState = TiltDetect;
   }
@@ -257,7 +353,7 @@ void setup() {
   task2 = scheduler.insert(Task_LedMat, TASK_LEDMAT_PERIOD, false);
   scheduler.activate(task2);
 
-  tiltState = TiltDetect;
+  tiltState = TiltWait;
   task2 = scheduler.insert(Task_Tilt, ONE_SEC/8, false);
   scheduler.activate(task3);
 }
@@ -273,6 +369,11 @@ void loop() {
 void detectLight()
 {
   photocellReading = analogRead(photocellPin);  
+
+  if (photocellReading <= 150)
+    flipHorizEnable = true;
+  else
+    flipHorizEnable = false;
 
   /*
   Serial.print("Analog reading = ");
@@ -291,11 +392,18 @@ void detectLight()
 
 void detectLight2()
 {
-  Serial.print("Analog reading2 = ");
+  //Serial.print("Analog reading2 = ");
 
   int brightness = analogRead(1);
+
+  //Serial.println(brightness);
+
+  if (brightness <= 350)
+    flipVertEnable = true;
+  else
+    flipVertEnable = false;
   
-  Serial.println(brightness);
+  //Serial.println(brightness);
   analogWrite(1, brightness/2);
 }
 

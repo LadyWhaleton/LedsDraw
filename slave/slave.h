@@ -13,7 +13,9 @@
 #define LEDMAT0_CLK 9 // LEDMAT0 CLK, 52 (black)
 #define LEDMAT_ADDR 0
 #define TASK_LEDMAT_PERIOD 50000
-
+#define JOYSTICK_UD 8
+#define JOYSTICK_LR 7
+#define PLAY_BUTTON 6
 
 // ===========================================================
 // GLOBALS
@@ -26,10 +28,15 @@ long frameTime = FRAME_TIME;
 char frameIndex = 0;
 
 // sync mode flags
+bool playReg = true;
+bool playFlippedV = false;
+bool playFlippedH = false;
 bool patternLoaded = false;
 bool syncMode, syncPlay = false;
+bool orientationSet = false;
 
 // generic mode flags
+bool playAnim = false;
 bool awaitingOrder = true;
 
 // ===========================================================
@@ -55,12 +62,16 @@ void displayPattern(const Pattern& p)
     lc.setRow(LEDMAT_ADDR, i, p.row[i]);
 }
 
-void animateFrames()
+// flag indicates whether to animate the flipped or reg versions
+void animateFrames(char flag)
 {
   // if frameTime > 0, stay on same frame. Decrement frameTime
   if (frameTime > 0) 
   {
-    displayPattern(LoadedFrames[frameIndex]);
+    if (flag == '1') displayPattern(LoadedFramesV[frameIndex]);
+    else if (flag == '2') displayPattern(LoadedFramesH[frameIndex]);
+    else displayPattern(LoadedFrames[frameIndex]);
+    
     frameTime -= TASK_LEDMAT_PERIOD;
   }
 
@@ -81,6 +92,7 @@ void resetFlags()
 {
   syncMode = false;
   syncPlay = false;
+  playAnim = false;
   awaitingOrder = true;
   patternLoaded = false;
 }

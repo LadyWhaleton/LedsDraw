@@ -25,6 +25,8 @@
 #define LSENSOR_PIN 0     
 int brightness;
 int photocellReading;     // the analog reading from the sensor divider
+bool flipVertEnable = false;
+bool flipHorizEnable = false;
 
 // ===========================================================
 // GLOBALS

@@ -15,6 +15,18 @@ struct Pattern
       row[i] = B00000000;
   }
 
+  void fillPattern()
+  {
+    for (int i = 0; i < 8; ++i)
+      row[i] = B11111111;
+  }
+
+  void invertPattern()
+  {
+    for (int i = 0; i < 8; ++i)
+      row[i] = ~(row[i]);
+  }
+
   Pattern()
   {
     clearPattern();
@@ -168,6 +180,9 @@ void getPatternBoundaries(const Pattern &p, char &top, char &bot, char &left, ch
   top = topMost; bot = botMost; left = leftMost; right = rightMost;
 }
 
+// ================ TILT SENSOR ========================
+enum TiltDir {UP, DOWN, LEFT, RIGHT, CENTER} tiltDirection;
+
 // Return value indicates if the pattern was edited
 // Takes in two parameters, the pattern to be modified and the shift direction
 bool shiftPattern(Pattern& p, char shiftDir )
@@ -175,7 +190,7 @@ bool shiftPattern(Pattern& p, char shiftDir )
   bool patternChanged = false; 
   
   // first, check if the pattern is empty
-  if ( p.isEmpty() )
+  if ( p.isEmpty() || tiltDirection == CENTER)
     return patternChanged;
 
   // otherwise, get the boundaries of the pattern

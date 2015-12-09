@@ -43,67 +43,10 @@ struct Pattern
 // ===========================================================
 // Array of Patterns
 // ===========================================================
-Pattern DefaultFrames[numFrames];
-Pattern Frames[numFrames];
-Pattern EditedPattern;
-
 Pattern LoadedPattern;
 Pattern LoadedFrames[numFrames];
-
-void Pattern_init()
-{
-  // pattern for the first frame;
-  Pattern f1;
-  f1.row[0] = B11111111;
-  f1.row[1] = B10000001;
-  f1.row[2] = B10000001;
-  f1.row[3] = B10000001;
-  f1.row[4] = B10000001;
-  f1.row[5] = B10000001;
-  f1.row[6] = B10000001;
-  f1.row[7] = B11111111;
-
-  // pattern for the second frame
-  Pattern f2;
-  f2.row[0] = B00000000;
-  f2.row[1] = B01111110;
-  f2.row[2] = B01000010;
-  f2.row[3] = B01000010;
-  f2.row[4] = B01000010;
-  f2.row[5] = B01000010;
-  f2.row[6] = B01111110;
-  f2.row[7] = B00000000;
-
-  // pattern for third frame
-  Pattern f3;
-  f3.row[0] = B00000000;
-  f3.row[1] = B00000000;
-  f3.row[2] = B00111100;
-  f3.row[3] = B00100100;
-  f3.row[4] = B00100100;
-  f3.row[5] = B00111100;
-  f3.row[6] = B00000000;
-  f3.row[7] = B00000000;
-
-  DefaultFrames[0] = f1;
-  DefaultFrames[1] = f2;
-  DefaultFrames[2] = f3;
-
-  /*
-  LoadedFrames[0] = f1;
-  LoadedFrames[1] = f2;
-  LoadedFrames[2] = f3; */
-
-  Frames[0] = f1;
-  Frames[1] = f2;
-  Frames[2] = f3;
-}
-
-void resetFrames()
-{
-  for (int i = 0; i < numFrames; ++i)
-    Frames[i] = DefaultFrames[i];
-}
+Pattern LoadedFramesV[numFrames]; // vertically flipped
+Pattern LoadedFramesH[numFrames]; // horizontally flipped
 
 
 // Determines the boundaries of the pattern
@@ -221,6 +164,39 @@ bool shiftPattern(Pattern& p, char shiftDir )
   }
 
   return patternChanged;
+}
+
+byte reverseByte (byte b)
+{
+   b = (b & 0xF0) >> 4 | (b & 0x0F) << 4;
+   b = (b & 0xCC) >> 2 | (b & 0x33) << 2;
+   b = (b & 0xAA) >> 1 | (b & 0x55) << 1;
+   return b;
+}
+
+// Flips the pattern horizontally or vertically
+// flag = 0 = horizontal, flag = 1 = vertical
+void flipFrames(bool flag)
+{
+  if (flag) // vertical flip
+  {
+    for (char i = 0; i < numFrames; ++i)
+    {
+      LoadedFramesV[i].row[0] = LoadedFrames[i].row[7];
+      LoadedFramesV[i].row[1] = LoadedFrames[i].row[6];
+      LoadedFramesV[i].row[2] = LoadedFrames[i].row[5];
+      LoadedFramesV[i].row[3] = LoadedFrames[i].row[4];
+      LoadedFramesV[i].row[4] = LoadedFrames[i].row[3];
+      LoadedFramesV[i].row[5] = LoadedFrames[i].row[2];
+      LoadedFramesV[i].row[6] = LoadedFrames[i].row[1];
+      LoadedFramesV[i].row[7] = LoadedFrames[i].row[0];
+    }
+  }
+
+  else // horizontal flip
+    for (char i = 0; i < numFrames; ++i)
+      for (char j = 0; j < 8; ++j)
+        LoadedFramesH[i].row[j] = reverseByte(LoadedFrames[i].row[j]);
 }
 
 #endif
