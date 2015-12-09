@@ -19,6 +19,14 @@
 #define TILT_B3 49
 
 // ===========================================================
+// LIGHTSENSOR
+// ===========================================================
+#define photocellPin 0
+#define LSENSOR_PIN 0     
+int brightness;
+int photocellReading;     // the analog reading from the sensor divider
+
+// ===========================================================
 // GLOBALS
 // ===========================================================
 #define ONE_SEC 1000000

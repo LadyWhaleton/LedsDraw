@@ -133,7 +133,6 @@ void SerialEvent() {
 // problem was that I was sending the value as a char/string?
 void syncSetup()
 { 
-  digitalWrite(6, HIGH);
   buf = Serial.read();
   LoadedFrames[findex].row[pindex] = buf; pindex++;
 
