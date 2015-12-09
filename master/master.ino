@@ -85,16 +85,6 @@ void Task_Main()
       break;
 
     case DrawMode:
-      // blink the cursor
-      blinkCursor();
-      
-      // if pattern has been shifted, redisplay the pattern
-      if ( shiftPattern(EditedPattern, tiltDirection) )
-      {
-        displayFlag("!");
-        displayPattern(EditedPattern);
-      }
-      
       // process key presses
       if (k == 'A') // save
       {
@@ -167,11 +157,33 @@ void Task_LedMat()
   switch (ledState)
   {
     case Wait:
-      if (playAnim && !drawModeOn)
-        animateFrames();
+      if (playAnim && !drawModeOn) ledState = Playing;
+      else if (drawModeOn) ledState = Drawing;
 
       break;
 
+    case Drawing:
+      if (!drawModeOn) ledState = Wait;
+
+      else // still in drawing mode
+      {
+        // blink the cursor
+        blinkCursor();
+  
+        // if pattern has been shifted, redisplay the pattern
+        if ( shiftPattern(EditedPattern, tiltDirection) )
+        {
+          displayFlag("!");
+          displayPattern(EditedPattern);
+        }
+      }
+      break;
+
+    case Playing:
+      if (!playAnim) ledState = Wait;
+      else animateFrames();
+      break;
+      
     default:
       ledState = Wait;
       frameIndex = 0;
@@ -231,6 +243,8 @@ void setup() {
   LedControl_init(); // init ledControl
   Pattern_init(); // init default patterns for LED matrix
   Keypad_init(); // Keypad on PortA
+
+  pinMode (1, OUTPUT);
   
   Serial.begin(115200);
   Serial1.begin(115200);
@@ -251,6 +265,7 @@ void setup() {
 void loop() {
   // put your main code here, to run repeatedly:
   detectLight();
+  detectLight2();
   scheduler.update();
 }
 
@@ -271,6 +286,16 @@ void detectLight()
   brightness = map(photocellReading, 0, 1023, 0, 255);
   analogWrite(LSENSOR_PIN, brightness);
  
-  delay(100);
+  // delay(100);
+}
+
+void detectLight2()
+{
+  Serial.print("Analog reading2 = ");
+
+  int brightness = analogRead(1);
+  
+  Serial.println(brightness);
+  analogWrite(1, brightness/2);
 }
 
