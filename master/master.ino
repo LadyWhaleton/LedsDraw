@@ -134,8 +134,8 @@ void Task_Main()
       break;
 
     case SyncMode:
-      if (flipHorizEnable && !flipVertEnable) Serial1.print('H');
-      else if (flipVertEnable && !flipHorizEnable) Serial1.print('V');
+      if (flipHorizEnable) { Serial1.print('H'); }
+      else if (flipVertEnable) { Serial1.print('V'); }
       else Serial1.print('R');
     
       if (k == 'D')

@@ -194,9 +194,11 @@ void flipFrames(bool flag)
   }
 
   else // horizontal flip
+  {
     for (char i = 0; i < numFrames; ++i)
       for (char j = 0; j < 8; ++j)
         LoadedFramesH[i].row[j] = reverseByte(LoadedFrames[i].row[j]);
+  }
 }
 
 #endif

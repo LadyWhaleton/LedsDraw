@@ -52,14 +52,13 @@ void Task_LedMat()
   switch (ledState)
   {
     case Wait:
-      if (syncMode) ledState = Syncing;
-      else if (patternLoaded && syncMode) ledState = Syncing;
-      else if (patternLoaded && playAnim) { ledState = Playing; frameTime = FRAME_TIME; }
+      if (syncMode) { ledState = Syncing; frameIndex = 0; frameTime = FRAME_TIME;}
+      else if (!syncMode && patternLoaded && playAnim) { ledState = Playing; frameTime = FRAME_TIME; }
       break;
 
     case Playing:
       if (!playAnim && !syncMode) ledState = Wait;
-      else if (syncMode) ledState = Syncing;
+      else if (syncMode) { ledState = Syncing; frameIndex = FRAME_TIME; }
       break;
 
     case Syncing:
@@ -133,7 +132,6 @@ void SerialEvent() {
     if (awaitingOrder)
     {
       char inChar = (char)Serial.read();
-      //Serial.print(inChar);
       
       // if the incoming character is a '&', set a flag
       if (inChar == '2')
@@ -150,8 +148,11 @@ void SerialEvent() {
       if (c == '2') // sync mode
       {
         if (!patternLoaded) syncSetup();
-        else if (patternLoaded && !orientationSet) getOrientation(); 
-        else if (patternLoaded && orientationSet) syncPoller();
+        else 
+        { 
+          if (!orientationSet) getOrientation(); 
+          else if (orientationSet) syncPoller();
+        }
       }
       
     }
@@ -162,13 +163,16 @@ void SerialEvent() {
 void syncSetup()
 { 
   buf = Serial.read();
+  
   LoadedFrames[findex].row[pindex] = buf; pindex++;
 
   if (pindex == 8) { findex++; pindex = 0; }
+
   if (findex == 3) 
   { 
-    flipFrames(0); flipFrames(1); 
+    flipFrames(false); flipFrames(true); 
     patternLoaded = true; syncPlay = false;
+    syncMode = true;
   }
 }
 
@@ -177,27 +181,28 @@ void getOrientation()
   // digitalWrite(5, HIGH);
   char inChar = (char) Serial.read();
 
-  if (inChar == 'V') { playReg = false; playFlippedV = true; playFlippedH = false; }
-  else if (inChar == 'H') { playReg = false; playFlippedV = false; playFlippedH = true; }
-  else { playReg = true; playFlippedV = false; playFlippedH = false; }
+  // not receiving correct value for some reason
+  if (inChar == 'V') { playReg = false; playFlippedV = true; playFlippedH = false; digitalWrite(5, LOW);}
+  else if (inChar == 'H') { playReg = false; playFlippedV = false; playFlippedH = true; digitalWrite(5, LOW); }
+  else { playReg = true; playFlippedV = false; playFlippedH = false; digitalWrite(5, HIGH); }
 
   orientationSet = true;
-  syncMode = true;
   
 }
 
 void syncPoller()
 {
-  digitalWrite(5, HIGH);
+  // digitalWrite(5, HIGH);
   char inChar = (char) Serial.read();
 
   if (inChar == '*' && syncPlay) syncPlay = false;
   else if (inChar == '*' && !syncPlay) syncPlay = true;
   else if (inChar == 'D')
   { 
-    orientationSet = false;
     syncMode = false; syncPlay = false; awaitingOrder = true; 
-    c = '0'; digitalWrite(5, LOW); 
+    c = '0'; 
   }
+
+  orientationSet = false;
 }
 
