@@ -25,7 +25,7 @@ void displayMenuOption(int option)
 		LCD_DisplayString(17, "3.Reset");
 
 	else if (option == 4)
-		LCD_DisplayString(17, "4.Help");
+		LCD_DisplayString(17, "4.Reset All");
 }
 
 void displayDrawMode()

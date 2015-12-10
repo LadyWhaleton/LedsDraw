@@ -60,7 +60,25 @@ void Task_Main()
           syncModeOn = true;
           mainState = SyncMode;
         }
+
+        else if (menuOption == 3) // reset currFrame to default
+        {
+          for (char i = 0; i < 8; ++i)
+            Frames[frameIndex].row[i] = DefaultFrames[frameIndex].row[i];
+
+          displayPattern(Frames[frameIndex]);
+        }
+
+        else if (menuOption == 4) // result all to default
+        {
+          for (char i = 0; i < numFrames; ++i)
+            for (char j = 0; j < 8; ++j)
+              Frames[i].row[j] = DefaultFrames[i].row[j];
+
+          displayPattern(Frames[frameIndex]);
+        }
       }
+      
 
       // stop the animation upon entering DrawModeAsk or SyncMode
       if (k == '*' && !playAnim && mainState != DrawModeAsk){ frameTime = FRAME_TIME; playAnim = true; }
