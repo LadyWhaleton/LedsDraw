@@ -391,7 +391,7 @@ void detectLight()
 {
   photocellReading = analogRead(photocellPin);  
 
-  if (photocellReading <= 150)
+  if (photocellReading <= 100)
     flipVertEnable = true;
   else
     flipVertEnable = false;
@@ -413,13 +413,13 @@ void detectLight()
 
 void detectLight2()
 {
-  //Serial.print("Analog reading2 = ");
-
   int brightness = analogRead(1);
 
-  //Serial.println(brightness);
+  /*
+  Serial.print("Analog reading2 = ");
+  Serial.println(brightness); */
 
-  if (brightness <= 350)
+  if (brightness <= 150)
     flipHorizEnable = true;
   else
     flipHorizEnable = false;
