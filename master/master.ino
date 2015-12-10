@@ -319,8 +319,8 @@ void Task_Tilt()
       
       if (!b3 && !b2 && b1 && b0) { tiltState = TiltLeft; tiltDirection = LEFT; }
       else if (b3 && b2 && !b1 && !b0) { tiltState = TiltRight; tiltDirection = RIGHT; } 
-      else if (b3 && !b2 && !b1 && b0) { tiltDirection = CENTER; }
       else if (!b3 && b2 && b1 && !b0) { tiltState = TiltDown; tiltDirection = DOWN; }
+      else if (b3 && !b2 && !b1 && b0) { tiltDirection = CENTER; }
       else { tiltState = TiltDetect; tiltDirection = CENTER; }
 
       if ( drawModeOn && shiftPattern(EditedPattern, tiltDirection) )
@@ -335,8 +335,8 @@ void Task_Tilt()
       
       if (!b3 && !b2 && b1 && b0) { tiltState = TiltLeft; tiltDirection = LEFT; }
       else if (b3 && b2 && !b1 && !b0) { tiltState = TiltRight; tiltDirection = RIGHT; } 
-      else if (b3 && !b2 && !b1 && b0) { tiltState = TiltUp; tiltDirection = UP; }
       else if (!b3 && b2 && b1 && !b0) { tiltDirection = CENTER; }
+      else if (b3 && !b2 && !b1 && b0) { tiltState = TiltUp; tiltDirection = UP; }
       else { tiltState = TiltDetect; tiltDirection = CENTER; }
 
       if ( drawModeOn && shiftPattern(EditedPattern, tiltDirection) )
