@@ -7,10 +7,10 @@ char c, findex, pindex;
 // SCHEDULER
 // ===========================================================
 Agenda scheduler;
-int task0, task1;
+int task0, task1, task2;
 
 // ===========================================================
-// TASK MAIN: handles inputs / master commands
+// TASK MAIN: sets play animation flags
 // ===========================================================
 enum T0_SM {Init, Idle, Sync, Play} mainState;
 void Task_Main()
@@ -82,13 +82,77 @@ void Task_LedMat()
       
     case Syncing:
       if (syncPlay && playReg) animateFrames('0');
-      else if (syncPlay && playFlippedV) animateFrames('1');
-      else if (syncPlay && playFlippedH) animateFrames('2');
+      else if (syncPlay && playFlippedV && !playFlippedH) animateFrames('1');
+      else if (syncPlay && !playFlippedV && playFlippedH) animateFrames('2');
+      else if (syncPlay && playFlippedV && playFlippedH) animateFrames('3');
       else if (!syncPlay) frameTime = FRAME_TIME;
       break;
       
     default:
       frameIndex = 0;
+  }
+}
+
+// ===========================================================
+// TASK SERIALEVENT: handles inputs / master commands
+// ===========================================================
+enum T2_SM {NoCommand, GotCommand, ProcessCommand} eventState;
+void Task_SerialEvent()
+{
+  char inChar;
+  byte rowPattern;
+  
+  // transitions
+  switch (eventState)
+  {
+    case NoCommand:
+      if (!awaitingOrder)
+        eventState = GotCommand;
+      break;
+
+    case GotCommand:
+      if (syncSetupDone)
+        eventState = ProcessCommand;
+      break;
+
+    case ProcessCommand:
+      if (awaitingOrder)
+        eventState = NoCommand;
+      break;
+      
+    default:
+      eventState = NoCommand;
+  }
+
+  // actions
+  switch (eventState)
+  {
+    case NoCommand:
+      if (Serial.available())
+      {
+        inChar = (char) Serial.read();
+
+        if (inChar == '2')
+        {
+          patternLoaded = false;
+          pindex = 0; findex = 0; awaitingOrder = false;
+        }
+      }
+      break;
+
+    case GotCommand:
+      while (Serial.available())
+        syncSetup();
+      break;
+
+    case ProcessCommand:
+      while (Serial.available())
+        syncPoller();
+      break;
+
+    default:
+      patternLoaded = false;
+      pindex = 0; findex = 0; awaitingOrder = false;
   }
 }
 
@@ -100,11 +164,15 @@ void setup()
   LedControl_init();
   resetFlags();
 
-  pinMode(5, OUTPUT);
+  pinMode(TEST_PIN, OUTPUT);
   pinMode(PLAY_BUTTON, INPUT);
   
   // put your setup code here, to run once:
   Serial.begin(115200);
+
+  eventState = NoCommand;
+  task2 = scheduler.insert(Task_SerialEvent, 1, false);
+  scheduler.activate(task2);
 
   mainState = Idle;
   task0 = scheduler.insert(Task_Main, TASK_MAIN_PERIOD, false);
@@ -119,44 +187,8 @@ void setup()
 void loop() 
 {
   // put your main code here, to run repeatedly:
-  SerialEvent();
+  //SerialEvent();
   scheduler.update();
-}
-
-void SerialEvent() {
-  
-  while (Serial.available()) 
-  {
-    // we get another command here if we don't have an order
-    // and if we were done with previous order
-    if (awaitingOrder)
-    {
-      char inChar = (char)Serial.read();
-      
-      // if the incoming character is a '&', set a flag
-      if (inChar == '2')
-      {
-        patternLoaded = false; orientationSet = false;
-        pindex = 0; findex = 0; awaitingOrder = false;
-        c = inChar;
-      }
-    }
-
-    // already got a command
-    else
-    {
-      if (c == '2') // sync mode
-      {
-        if (!patternLoaded) syncSetup();
-        else 
-        { 
-          if (!orientationSet) getOrientation(); 
-          else if (orientationSet) syncPoller();
-        }
-      }
-      
-    }
-  } // end of while loop
 }
 
 // problem was that I was sending the value as a char/string?
@@ -170,39 +202,31 @@ void syncSetup()
 
   if (findex == 3) 
   { 
-    flipFrames(false); flipFrames(true); 
+    flipFrames(false); flipFrames(true); invertFrames();
     patternLoaded = true; syncPlay = false;
+    syncSetupDone = true;
     syncMode = true;
   }
 }
 
-void getOrientation()
-{
-  // digitalWrite(5, HIGH);
-  char inChar = (char) Serial.read();
-
-  // not receiving correct value for some reason
-  if (inChar == 'V') { playReg = false; playFlippedV = true; playFlippedH = false; digitalWrite(5, LOW);}
-  else if (inChar == 'H') { playReg = false; playFlippedV = false; playFlippedH = true; digitalWrite(5, LOW); }
-  else { playReg = true; playFlippedV = false; playFlippedH = false; digitalWrite(5, HIGH); }
-
-  orientationSet = true;
-  
-}
-
 void syncPoller()
 {
-  // digitalWrite(5, HIGH);
   char inChar = (char) Serial.read();
 
   if (inChar == '*' && syncPlay) syncPlay = false;
   else if (inChar == '*' && !syncPlay) syncPlay = true;
   else if (inChar == 'D')
   { 
-    syncMode = false; syncPlay = false; awaitingOrder = true; 
+    digitalWrite(TEST_PIN, LOW);
+    syncSetupDone = false;
+    syncMode = false; syncPlay = false; awaitingOrder = true;
     c = '0'; 
   }
+  // orientation stuff
+  else if (inChar == 'V') { playReg = false; playFlippedV = true; playFlippedH = false; }
+  else if (inChar == 'H') { playReg = false; playFlippedV = false; playFlippedH = true; }
+  else if (inChar == 'I') { playReg = false; playFlippedV = true; playFlippedH = true; }
+  else if (inChar == 'R') { playReg = true; playFlippedV = false; playFlippedH = false; digitalWrite(TEST_PIN, HIGH); }
 
-  orientationSet = false;
 }
 

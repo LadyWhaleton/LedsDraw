@@ -62,6 +62,7 @@ void Task_Main()
         }
       }
 
+      // stop the animation upon entering DrawModeAsk or SyncMode
       if (k == '*' && !playAnim && mainState != DrawModeAsk){ frameTime = FRAME_TIME; playAnim = true; }
       else if (k == '*' && playAnim || mainState == DrawModeAsk) playAnim = false;
       else if (playAnim && mainState == SyncMode) playAnim = false;
@@ -134,8 +135,9 @@ void Task_Main()
       break;
 
     case SyncMode:
-      if (flipHorizEnable) { Serial1.print('H'); }
-      else if (flipVertEnable) { Serial1.print('V'); }
+      if (flipHorizEnable && !flipVertEnable) { Serial1.print('H'); }
+      else if (!flipHorizEnable && flipVertEnable ) { Serial1.print('V'); }
+      else if (flipHorizEnable && flipVertEnable) { Serial1.print('I'); }
       else Serial1.print('R');
     
       if (k == 'D')
@@ -150,9 +152,9 @@ void Task_Main()
 
       else if (k == '*')
       {
-        if (!playAnim){ frameTime = FRAME_TIME; playAnim = true; }
-        else if (playAnim) playAnim = false;
         Serial1.print('*');
+        if (!playAnim) playAnim = true; 
+        else if (playAnim) playAnim = false;
       }
       
       break;
@@ -211,6 +213,7 @@ void Task_LedMat()
 
     case Syncing:
       if (playAnim) animateFrames();
+      else if (!playAnim) frameTime = FRAME_TIME;
       break;
       
     default:
@@ -249,8 +252,8 @@ void Task_Tilt()
         
       if (!b3 && !b2 && b1 && b0) { tiltState = TiltLeft; tiltDirection = LEFT; }
       else if (b3 && b2 && !b1 && !b0) { tiltState = TiltRight; tiltDirection = RIGHT; } 
-      else if (!b3 && b2 && b1 && !b0) { tiltState = TiltUp; tiltDirection = UP; }
-      else if (b3 && !b2 && !b1 && b0) { tiltState = TiltDown; tiltDirection = DOWN; }
+      else if (!b3 && b2 && b1 && !b0) { tiltState = TiltDown; tiltDirection = DOWN; }
+      else if (b3 && !b2 && !b1 && b0) { tiltState = TiltUp; tiltDirection = UP; }
       else tiltDirection = CENTER;
 
       // if pattern has been shifted, redisplay the pattern
@@ -266,8 +269,8 @@ void Task_Tilt()
       
       if (!b3 && !b2 && b1 && b0) { tiltDirection = CENTER; }
       else if (b3 && b2 && !b1 && !b0) { tiltState = TiltRight; tiltDirection = RIGHT; } 
-      else if (!b3 && b2 && b1 && !b0) { tiltState = TiltUp; tiltDirection = UP; }
-      else if (b3 && !b2 && !b1 && b0) { tiltState = TiltDown; tiltDirection = DOWN; }
+      else if (!b3 && b2 && b1 && !b0) { tiltState = TiltDown; tiltDirection = DOWN; }
+      else if (b3 && !b2 && !b1 && b0) { tiltState = TiltUp; tiltDirection = UP; }
       else { tiltState = TiltDetect; tiltDirection = CENTER; }
 
       if ( drawModeOn && shiftPattern(EditedPattern, tiltDirection) )
@@ -282,8 +285,8 @@ void Task_Tilt()
       
       if (!b3 && !b2 && b1 && b0) { tiltState = TiltLeft; tiltDirection = LEFT; }
       else if (b3 && b2 && !b1 && !b0) { tiltDirection = CENTER; } 
-      else if (!b3 && b2 && b1 && !b0) { tiltState = TiltUp; tiltDirection = UP; }
-      else if (b3 && !b2 && !b1 && b0) { tiltState = TiltDown; tiltDirection = DOWN; }
+      else if (!b3 && b2 && b1 && !b0) { tiltState = TiltDown; tiltDirection = DOWN; }
+      else if (b3 && !b2 && !b1 && b0) { tiltState = TiltUp; tiltDirection = UP; }
       else { tiltState = TiltDetect; tiltDirection = CENTER; }
 
       if ( drawModeOn && shiftPattern(EditedPattern, tiltDirection) )
@@ -298,8 +301,8 @@ void Task_Tilt()
       
       if (!b3 && !b2 && b1 && b0) { tiltState = TiltLeft; tiltDirection = LEFT; }
       else if (b3 && b2 && !b1 && !b0) { tiltState = TiltRight; tiltDirection = RIGHT; } 
-      else if (!b3 && b2 && b1 && !b0) { tiltDirection = CENTER; }
-      else if (b3 && !b2 && !b1 && b0) { tiltState = TiltDown; tiltDirection = DOWN; }
+      else if (b3 && !b2 && !b1 && b0) { tiltDirection = CENTER; }
+      else if (!b3 && b2 && b1 && !b0) { tiltState = TiltDown; tiltDirection = DOWN; }
       else { tiltState = TiltDetect; tiltDirection = CENTER; }
 
       if ( drawModeOn && shiftPattern(EditedPattern, tiltDirection) )
@@ -314,8 +317,8 @@ void Task_Tilt()
       
       if (!b3 && !b2 && b1 && b0) { tiltState = TiltLeft; tiltDirection = LEFT; }
       else if (b3 && b2 && !b1 && !b0) { tiltState = TiltRight; tiltDirection = RIGHT; } 
-      else if (!b3 && b2 && b1 && !b0) { tiltState = TiltUp; tiltDirection = UP; }
-      else if (b3 && !b2 && !b1 && b0) { tiltDirection = CENTER; }
+      else if (b3 && !b2 && !b1 && b0) { tiltState = TiltUp; tiltDirection = UP; }
+      else if (!b3 && b2 && b1 && !b0) { tiltDirection = CENTER; }
       else { tiltState = TiltDetect; tiltDirection = CENTER; }
 
       if ( drawModeOn && shiftPattern(EditedPattern, tiltDirection) )
@@ -371,9 +374,9 @@ void detectLight()
   photocellReading = analogRead(photocellPin);  
 
   if (photocellReading <= 150)
-    flipHorizEnable = true;
+    flipVertEnable = true;
   else
-    flipHorizEnable = false;
+    flipVertEnable = false;
 
   /*
   Serial.print("Analog reading = ");
@@ -399,9 +402,9 @@ void detectLight2()
   //Serial.println(brightness);
 
   if (brightness <= 350)
-    flipVertEnable = true;
+    flipHorizEnable = true;
   else
-    flipVertEnable = false;
+    flipHorizEnable = false;
   
   //Serial.println(brightness);
   analogWrite(1, brightness/2);

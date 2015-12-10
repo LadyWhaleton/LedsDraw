@@ -47,7 +47,7 @@ Pattern LoadedPattern;
 Pattern LoadedFrames[numFrames];
 Pattern LoadedFramesV[numFrames]; // vertically flipped
 Pattern LoadedFramesH[numFrames]; // horizontally flipped
-
+Pattern LoadedFramesI[numFrames]; // inverted
 
 // Determines the boundaries of the pattern
 void getPatternBoundaries(const Pattern &p, char &top, char &bot, char &left, char &right)
@@ -199,6 +199,13 @@ void flipFrames(bool flag)
       for (char j = 0; j < 8; ++j)
         LoadedFramesH[i].row[j] = reverseByte(LoadedFrames[i].row[j]);
   }
+}
+
+void invertFrames()
+{
+  for (char i = 0; i < numFrames; ++i)
+    for (char j = 0; j < 8; ++j)
+      LoadedFramesI[i].row[j] = ~(LoadedFrames[i].row[j]);
 }
 
 #endif

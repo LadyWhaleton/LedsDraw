@@ -63,6 +63,7 @@ void Pattern_init()
 {
   // pattern for the first frame;
   Pattern f1;
+  /*
   f1.row[0] = B11111111;
   f1.row[1] = B10000001;
   f1.row[2] = B10000001;
@@ -70,29 +71,38 @@ void Pattern_init()
   f1.row[4] = B10000001;
   f1.row[5] = B10000001;
   f1.row[6] = B10000001;
-  f1.row[7] = B11111111;
+  f1.row[7] = B11111111; */
+
+  f1.row[0] = B00000000;
+  f1.row[1] = B01111110;
+  f1.row[2] = B01000000;
+  f1.row[3] = B01000000;
+  f1.row[4] = B01111110;
+  f1.row[5] = B01000000;
+  f1.row[6] = B01000000;
+  f1.row[7] = B01111110;
 
   // pattern for the second frame
   Pattern f2;
   f2.row[0] = B00000000;
-  f2.row[1] = B01111110;
-  f2.row[2] = B01000010;
+  f2.row[1] = B01111000;
+  f2.row[2] = B01000100;
   f2.row[3] = B01000010;
   f2.row[4] = B01000010;
   f2.row[5] = B01000010;
-  f2.row[6] = B01111110;
-  f2.row[7] = B00000000;
+  f2.row[6] = B01000100;
+  f2.row[7] = B01111000;
 
   // pattern for third frame
   Pattern f3;
   f3.row[0] = B00000000;
-  f3.row[1] = B00000000;
-  f3.row[2] = B00111100;
-  f3.row[3] = B00100100;
-  f3.row[4] = B00100100;
-  f3.row[5] = B00111100;
-  f3.row[6] = B00000000;
-  f3.row[7] = B00000000;
+  f3.row[1] = B00111100;
+  f3.row[2] = B01000010;
+  f3.row[3] = B01000010;
+  f3.row[4] = B01111110;
+  f3.row[5] = B01000010;
+  f3.row[6] = B01000010;
+  f3.row[7] = B01000010;
 
   DefaultFrames[0] = f1;
   DefaultFrames[1] = f2;

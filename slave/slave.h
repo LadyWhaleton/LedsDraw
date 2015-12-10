@@ -12,16 +12,15 @@
 #define LEDMAT0_CS 10 // LEDMAT0 CS, 53 (white)
 #define LEDMAT0_CLK 9 // LEDMAT0 CLK, 52 (black)
 #define LEDMAT_ADDR 0
-#define TASK_LEDMAT_PERIOD 50000
-#define JOYSTICK_UD 8
-#define JOYSTICK_LR 7
-#define PLAY_BUTTON 6
+#define TASK_LEDMAT_PERIOD 5000
+#define PLAY_BUTTON 8
+#define TEST_PIN 7
 
 // ===========================================================
 // GLOBALS
 // ===========================================================
 #define ONE_SEC 1000000
-#define TASK_MAIN_PERIOD 150000
+#define TASK_MAIN_PERIOD 5000
 #define FRAME_TIME 200000
 
 long frameTime = FRAME_TIME;
@@ -33,7 +32,7 @@ bool playFlippedV = false;
 bool playFlippedH = false;
 bool patternLoaded = false;
 bool syncMode, syncPlay = false;
-bool orientationSet = false;
+bool syncSetupDone = false;
 
 // generic mode flags
 bool playAnim = false;
@@ -70,6 +69,7 @@ void animateFrames(char flag)
   {
     if (flag == '1') displayPattern(LoadedFramesV[frameIndex]);
     else if (flag == '2') displayPattern(LoadedFramesH[frameIndex]);
+    else if (flag == '3') displayPattern(LoadedFramesI[frameIndex]);
     else displayPattern(LoadedFrames[frameIndex]);
     
     frameTime -= TASK_LEDMAT_PERIOD;
