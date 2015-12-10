@@ -39,7 +39,7 @@ void displayDrawModeAsk()
 {
   LCD_ClearScreen();
   LCD_DisplayString(1, "Draw on which?");
-  LCD_DisplayString(17, "A.F1  B.F2  C.F3");
+  LCD_DisplayString(17, "1.F1  2.F2  3.F3");
 }
 
 void displaySyncMode()

@@ -107,9 +107,9 @@ void animateFrames()
 // ===========================================================
 void drawModeSetup(char k)
 {
-	if (k == 'A') frameIndex = 0;
-	else if (k == 'B') frameIndex = 1;
-	else if (k == 'C') frameIndex = 2;
+	if (k == '1') frameIndex = 0;
+	else if (k == '2') frameIndex = 1;
+	else if (k == '3') frameIndex = 2;
 
 	// display pattern first
 	EditedPattern = Frames[frameIndex];

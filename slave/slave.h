@@ -50,7 +50,14 @@ void LedControl_init()
   lc.setIntensity(LEDMAT_ADDR, 3);
   lc.clearDisplay(LEDMAT_ADDR);
 
-  lc.setRow(LEDMAT_ADDR, 0, B1111000);
+  lc.setRow(LEDMAT_ADDR, 0, B00000000);
+  lc.setRow(LEDMAT_ADDR, 1, B00000000);
+  lc.setRow(LEDMAT_ADDR, 2, B00100100);
+  lc.setRow(LEDMAT_ADDR, 3, B00100100);
+  lc.setRow(LEDMAT_ADDR, 4, B00000000);
+  lc.setRow(LEDMAT_ADDR, 5, B01000010);
+  lc.setRow(LEDMAT_ADDR, 6, B00111100);
+  lc.setRow(LEDMAT_ADDR, 7, B00000000);
 }
 
 void displayPattern(const Pattern& p)

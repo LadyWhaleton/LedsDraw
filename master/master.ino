@@ -88,7 +88,7 @@ void Task_Main()
       break;
 
     case DrawModeAsk:
-      if (k == 'A' || k == 'B' || k == 'C')
+      if (k == '1' || k == '2' || k == '3')
       {
         drawModeSetup(k);
         displayDrawMode();
